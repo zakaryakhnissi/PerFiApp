@@ -56,6 +56,8 @@ PerFiApp is organized into module tabs, each with focused submodules:
 
 - [Product Definition / Module Master Table](docs/PDR_PerFiApp.md) — the full module &
   submodule breakdown, competitor analysis, and FinOS opportunities.
+- [Claude Code Agent Team](docs/AGENT_TEAM.md) — the shared roster of specialized AI agents
+  (`.claude/agents/`) every collaborator gets on clone, and how to use them.
 
 ## Status
 
