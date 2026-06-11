@@ -1,10 +1,12 @@
 # Research reports
 
 Output from the **researcher** agent ([`.claude/agents/researcher.md`](../../.claude/agents/researcher.md)),
-which scouts external tools — MCP servers, Claude Code plugins, and addons — that could help
-PerFiApp's agent team, evaluated for relevance, maturity, and security.
+which scouts developments that could make PerFiApp's agent team more capable, cheaper, safer,
+or more compliant — across tracks: agent tooling (MCP servers, plugins, addons), AI
+cost/token optimization, model updates, agent evaluation, toolchain releases, AI/fintech
+security, and Canadian open-banking & compliance.
 
-Reports land here as dated files: **`agent-tooling-YYYY-MM-DD.md`**.
+Reports land here as dated files: **`agent-research-YYYY-MM-DD.md`**.
 
 They are generated:
 

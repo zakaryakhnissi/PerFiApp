@@ -29,7 +29,7 @@ roles evolve through normal pull requests, and everyone stays in sync.
 | **implementer** | Writing the code for an approved plan, matching existing conventions. |
 | **test-engineer** | Writing and running meaningful tests; verifying behavior. |
 | **code-reviewer** | Reviewing a diff for correctness, money/precision, security, and i18n (read-only). |
-| **researcher** | Scouting MCP servers, plugins, and addons that could help the team; writes a dated research report. Runs weekly via CI and on demand. |
+| **researcher** | Scouting developments that make the team better/cheaper/safer/more compliant — tooling, AI cost optimization, model updates, evals, toolchain releases, AI/fintech security, and Canadian compliance; writes a dated report. Runs weekly via CI and on demand. |
 
 Each agent is tuned for PerFiApp: **Canada-first**, **bilingual (EN/FR)**, money handled as
 exact units (never floats), and aligned with our [Spec Kit](https://github.com/github/spec-kit)
