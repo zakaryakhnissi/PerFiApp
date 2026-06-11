@@ -81,3 +81,15 @@ jobs:
             --max-turns 40
             --model claude-sonnet-4-6
             --allowedTools "Agent,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash"
+
+      - name: Token usage summary
+        if: steps.cred.outputs.ok == 'true' && always()
+        run: |
+          LOG=/home/runner/work/_temp/claude-execution-output.json
+          if [ ! -f "$LOG" ]; then
+            echo "No execution log found — skipping usage summary."
+            exit 0
+          fi
+          RESULT=$(jq -r 'select(.type == "result") | "\(.subtype) | turns: \(.num_turns) | duration: \((.duration_ms / 1000) | floor)s | cost: $\(.total_cost_usd | . * 100 | round | . / 100)"' "$LOG" 2>/dev/null || echo "Could not parse log")
+          echo "### Research scout usage"
+          echo "$RESULT"
