@@ -29,6 +29,7 @@ roles evolve through normal pull requests, and everyone stays in sync.
 | **implementer** | Writing the code for an approved plan, matching existing conventions. |
 | **test-engineer** | Writing and running meaningful tests; verifying behavior. |
 | **code-reviewer** | Reviewing a diff for correctness, money/precision, security, and i18n (read-only). |
+| **researcher** | Scouting MCP servers, plugins, and addons that could help the team; writes a dated research report. Runs weekly via CI and on demand. |
 
 Each agent is tuned for PerFiApp: **Canada-first**, **bilingual (EN/FR)**, money handled as
 exact units (never floats), and aligned with our [Spec Kit](https://github.com/github/spec-kit)
@@ -102,6 +103,25 @@ runs in-process rather than split panes. Requires Claude Code v2.1.32+.
   a focused system prompt. Optional: `tools` (allowlist) and `model`.
 - **Change a role**: edit its file and open a PR — reviewers see exactly what changed.
 - Keep descriptions sharp; that text is what Claude uses to decide when to delegate.
+
+## Automated tooling research
+
+The **researcher** is the one agent that runs on its own schedule, not just on demand. A
+GitHub Actions workflow,
+[`.github/workflows/agent-tooling-research.yml`](../.github/workflows/agent-tooling-research.yml),
+wakes **weekly**, has the researcher scout new MCP servers / plugins / addons for the team,
+writes a dated report to [`docs/research/`](research/), and **opens a PR** for the team to
+review. You can also run it manually from the **Actions** tab → *Run workflow*.
+
+It needs a **one-time setup by a repo admin**:
+
+1. Install the [Claude GitHub app](https://github.com/apps/claude) (or run
+   `/install-github-app` from Claude Code in this repo).
+2. Add an `ANTHROPIC_API_KEY` repository secret (**Settings → Secrets and variables →
+   Actions**).
+
+Each run consumes Claude API tokens and Actions minutes, and nothing it finds is adopted
+until the team reviews the PR.
 
 ## How this fits the rest of our tooling
 
