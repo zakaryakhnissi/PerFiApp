@@ -1,0 +1,59 @@
+name: Agent Tooling Research
+
+# Periodically scout MCP servers, plugins, and addons that could help PerFiApp's
+# agent team, then open a PR with a dated research report for the team to review.
+#
+# ── One-time setup (repo admin) ────────────────────────────────────────────────
+#   1. Install the Claude GitHub app:  https://github.com/apps/claude
+#      (or run `/install-github-app` from Claude Code inside this repo).
+#   2. Add an `ANTHROPIC_API_KEY` repository secret:
+#      Settings → Secrets and variables → Actions → New repository secret.
+#   Until both are done, the scheduled run will fail to authenticate.
+#
+# Note: each run uses Claude API tokens and GitHub Actions minutes (billed).
+# Trigger manually anytime from the Actions tab → "Run workflow".
+
+on:
+  schedule:
+    - cron: "0 13 * * 1" # every Monday at 13:00 UTC
+  workflow_dispatch: {} # manual trigger
+
+permissions:
+  contents: write # create a branch and commit the report
+  pull-requests: write # open the PR
+
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Run tooling researcher
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # lets the agent use the gh CLI
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          prompt: |
+            Use the `researcher` agent to run its full scan across its research tracks
+            (agent tooling, AI cost/token optimization, model updates, agent evaluation,
+            toolchain releases, AI/fintech security, and Canadian open-banking & compliance),
+            within the context of this project. Rotate emphasis so the report stays focused,
+            leading with whatever is most time-sensitive.
+
+            Then:
+            1. Determine today's date in YYYY-MM-DD form.
+            2. Write the report to docs/research/agent-research-<date>.md, following the
+               structure the researcher agent defines. Read existing files in docs/research/
+               first and focus on what is new or changed since the last report.
+            3. Create a branch named research/agent-research-<date>, commit only the new
+               report, push it, and open a pull request to main titled
+               "research: agent research scan <date>" that summarizes the top recommendations.
+            Do not modify anything outside docs/research/.
+          claude_args: |
+            --max-turns 40
+            --model claude-sonnet-4-6
+            --allowedTools "Agent,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash"
