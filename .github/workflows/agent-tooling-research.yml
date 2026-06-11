@@ -4,21 +4,22 @@ name: Agent Tooling Research
 # PerFiApp's agent team, then open a PR with a dated research report for the team to review.
 #
 # ── Authentication ─────────────────────────────────────────────────────────────
-# This needs an Anthropic credential. Two ways to provide it:
-#   1. RECOMMENDED — add a repository secret named ANTHROPIC_API_KEY
-#      (Settings -> Secrets and variables -> Actions, or `gh secret set ANTHROPIC_API_KEY`).
-#      Works for scheduled AND manual runs, and the value never appears in logs.
-#   2. Manual fallback — run the workflow from the Actions tab ("Run workflow") and paste a
-#      key into the input below. Use this only if you cannot set a secret.
-#      WARNING: a value typed into a workflow input is part of the run metadata and is NOT a
-#      secret. We mask it from the logs, but treat the key as exposed and ROTATE it after the
-#      run. Prefer option 1.
+# This needs a Claude credential. Any ONE of these works (checked in this order):
+#   1. CLAUDE_CODE_OAUTH_TOKEN secret — RECOMMENDED if you have Claude Pro/Max. Generate it
+#      locally with `claude setup-token` and add it as a repo secret
+#      (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`). Usage draws on your subscription quota.
+#   2. ANTHROPIC_API_KEY secret — pay-as-you-go API key from console.anthropic.com
+#      (`gh secret set ANTHROPIC_API_KEY`). Best for heavy/predictable automation.
+#   3. Manual API-key input (below) — run from the Actions tab and paste a key. Use only if
+#      you can't set a secret. WARNING: a value typed into a workflow input is part of the run
+#      metadata and is NOT a secret. We mask it from logs, but treat the key as exposed and
+#      ROTATE it afterward.
 #
-# If no credential is available (e.g. a scheduled run before a secret is set), the job SKIPS
+# If no credential is available (e.g. a scheduled run before any secret is set), the job SKIPS
 # cleanly instead of failing.
 #
-# Each run uses Claude API tokens + GitHub Actions minutes (billed). PR creation also expects
-# the Claude GitHub app: https://github.com/apps/claude
+# Each run uses your Claude quota/tokens + GitHub Actions minutes. PR creation also expects the
+# Claude GitHub app: https://github.com/apps/claude
 
 on:
   schedule:
@@ -26,7 +27,7 @@ on:
   workflow_dispatch:
     inputs:
       anthropic_api_key:
-        description: "Anthropic API key — used only if no ANTHROPIC_API_KEY secret exists. WARNING: visible in run metadata; rotate the key afterwards. Prefer setting the secret."
+        description: "Anthropic API key — used only if no CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY secret exists. WARNING: visible in run metadata; rotate afterward. Prefer a secret."
         required: false
         type: string
 
@@ -39,34 +40,43 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - name: Resolve Anthropic credential
+      - name: Resolve Claude credential
         id: creds
         env:
+          OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           SECRET_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           INPUT_KEY: ${{ inputs.anthropic_api_key }}
         run: |
-          KEY="${SECRET_KEY:-$INPUT_KEY}"
-          if [ -n "$KEY" ]; then
-            echo "::add-mask::$KEY"
-            echo "ANTHROPIC_API_KEY=$KEY" >> "$GITHUB_ENV"
-            echo "has_key=true" >> "$GITHUB_OUTPUT"
+          API_KEY="${SECRET_KEY:-$INPUT_KEY}"
+          if [ -n "$OAUTH_TOKEN" ]; then
+            echo "::add-mask::$OAUTH_TOKEN"
+            echo "CLAUDE_CODE_OAUTH_TOKEN=$OAUTH_TOKEN" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$API_KEY" ]; then
+            echo "::add-mask::$API_KEY"
+            echo "ANTHROPIC_API_KEY=$API_KEY" >> "$GITHUB_ENV"
+          fi
+          if [ -n "$OAUTH_TOKEN" ] || [ -n "$API_KEY" ]; then
+            echo "has_cred=true" >> "$GITHUB_OUTPUT"
           else
-            echo "has_key=false" >> "$GITHUB_OUTPUT"
-            echo "No Anthropic credential found — skipping this run."
-            echo "Add an ANTHROPIC_API_KEY repository secret (recommended), or run this"
-            echo "workflow manually and paste a key into the input. See this file's header."
+            echo "has_cred=false" >> "$GITHUB_OUTPUT"
+            echo "No Claude credential found — skipping this run."
+            echo "Add a CLAUDE_CODE_OAUTH_TOKEN (Pro/Max) or ANTHROPIC_API_KEY repository"
+            echo "secret, or run manually and paste an API key. See this file's header."
           fi
 
       - name: Checkout repository
-        if: steps.creds.outputs.has_key == 'true'
+        if: steps.creds.outputs.has_cred == 'true'
         uses: actions/checkout@v4
 
       - name: Run research scout
-        if: steps.creds.outputs.has_key == 'true'
+        if: steps.creds.outputs.has_cred == 'true'
         uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # lets the agent use the gh CLI
         with:
+          # Whichever was resolved above is used; the empty one is ignored.
+          claude_code_oauth_token: ${{ env.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ env.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |

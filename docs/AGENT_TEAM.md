@@ -113,15 +113,22 @@ wakes **weekly**, has the researcher scout new MCP servers / plugins / addons fo
 writes a dated report to [`docs/research/`](research/), and **opens a PR** for the team to
 review. You can also run it manually from the **Actions** tab → *Run workflow*.
 
-**Authentication** — the workflow needs an Anthropic credential, provided one of two ways:
+**Authentication** — the workflow needs a Claude credential. Any one of these works (checked
+in this order):
 
-1. **Recommended:** add an `ANTHROPIC_API_KEY` repository secret
-   (**Settings → Secrets and variables → Actions**, or `gh secret set ANTHROPIC_API_KEY`).
-   Works for both scheduled and manual runs, and never appears in logs.
-2. **Manual fallback:** run it from the **Actions** tab → *Run workflow* and paste a key into
-   the input. ⚠ A value typed into a workflow input is **not** a secret — it's visible in the
-   run metadata. The workflow masks it from logs, but treat the key as exposed and **rotate it
-   afterward**. Prefer option 1.
+1. **Subscription token (recommended if you have Claude Pro/Max):** generate a long-lived
+   OAuth token locally with `claude setup-token`, then add it as a secret named
+   `CLAUDE_CODE_OAUTH_TOKEN` (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`). Usage draws on your
+   subscription quota — no per-token API bill. Note it **shares the same limits as your
+   interactive Claude usage**, and the token is account-level — store it only as a secret and
+   regenerate it if it leaks.
+2. **API key:** add an `ANTHROPIC_API_KEY` secret (`gh secret set ANTHROPIC_API_KEY`) from
+   [console.anthropic.com](https://console.anthropic.com). Pay-as-you-go; best for heavy or
+   predictable automation.
+3. **Manual fallback:** run it from the **Actions** tab → *Run workflow* and paste an API key
+   into the input. ⚠ A value typed into a workflow input is **not** a secret — it's visible in
+   the run metadata. The workflow masks it from logs, but treat the key as exposed and
+   **rotate it afterward**. Prefer option 1 or 2.
 
 If no credential is available, the job **skips cleanly** instead of failing. PR creation also
 expects the [Claude GitHub app](https://github.com/apps/claude) to be installed (or run
