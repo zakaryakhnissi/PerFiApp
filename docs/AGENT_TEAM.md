@@ -113,12 +113,19 @@ wakes **weekly**, has the researcher scout new MCP servers / plugins / addons fo
 writes a dated report to [`docs/research/`](research/), and **opens a PR** for the team to
 review. You can also run it manually from the **Actions** tab → *Run workflow*.
 
-It needs a **one-time setup by a repo admin**:
+**Authentication** — the workflow needs an Anthropic credential, provided one of two ways:
 
-1. Install the [Claude GitHub app](https://github.com/apps/claude) (or run
-   `/install-github-app` from Claude Code in this repo).
-2. Add an `ANTHROPIC_API_KEY` repository secret (**Settings → Secrets and variables →
-   Actions**).
+1. **Recommended:** add an `ANTHROPIC_API_KEY` repository secret
+   (**Settings → Secrets and variables → Actions**, or `gh secret set ANTHROPIC_API_KEY`).
+   Works for both scheduled and manual runs, and never appears in logs.
+2. **Manual fallback:** run it from the **Actions** tab → *Run workflow* and paste a key into
+   the input. ⚠ A value typed into a workflow input is **not** a secret — it's visible in the
+   run metadata. The workflow masks it from logs, but treat the key as exposed and **rotate it
+   afterward**. Prefer option 1.
+
+If no credential is available, the job **skips cleanly** instead of failing. PR creation also
+expects the [Claude GitHub app](https://github.com/apps/claude) to be installed (or run
+`/install-github-app` from Claude Code in this repo).
 
 Each run consumes Claude API tokens and Actions minutes, and nothing it finds is adopted
 until the team reviews the PR.
