@@ -24,8 +24,8 @@ roles evolve through normal pull requests, and everyone stays in sync.
 
 | Agent | Use it for |
 |---|---|
-| **spec-writer** | Turning a product idea into a clear spec with acceptance criteria. |
-| **architect** | Turning a spec into a technical plan and weighing trade-offs (stack-agnostic for now). |
+| **spec-lead** | Spec Kit specialist: owns the **constitution**, turns a request into a **clarified spec**, and produces the **plan** — driving the real `.specify/` assets. |
+| **architect** | **Architect & tech lead**: turns the plan into concrete technical design, tech choices, and a sequenced task breakdown; coordinates the build. |
 | **implementer** | Writing the code for an approved plan, matching existing conventions. |
 | **test-engineer** | Writing and running meaningful tests; verifying behavior. |
 | **code-reviewer** | Reviewing a diff for correctness, money/precision, security, and i18n (read-only). |
@@ -33,6 +33,33 @@ roles evolve through normal pull requests, and everyone stays in sync.
 Each agent is tuned for PerFiApp: **Canada-first**, **bilingual (EN/FR)**, money handled as
 exact units (never floats), and aligned with our [Spec Kit](https://github.com/github/spec-kit)
 workflow.
+
+### The spec-driven flow
+
+The roster mirrors how a feature actually moves through Spec Kit:
+
+```text
+spec-lead                         architect / tech lead          builders
+─────────                         ─────────────────────          ────────
+constitution → specify → clarify → plan  ──►  design + sequence ──►  implementer
+                  ▲                                                  test-engineer
+                  └── clarifying questions                           code-reviewer
+                      surfaced to you (the
+                      main session) to answer
+```
+
+- **spec-lead** owns the *upstream* (why/what): constitution, spec, clarifications, plan.
+- **architect / tech lead** owns the *downstream* (how): technical design, technology choice,
+  task sequencing, and coordinating the builders.
+- Because subagents can't interview you mid-run, the spec-lead returns **clarifying
+  questions** for the main session to ask you, then folds your answers back in.
+
+**How spec-lead and architect coordinate** — by design this works two ways:
+- **Today (normal subagents):** each reports to the main session, which relays artifacts
+  between them.
+- **With parallel [agent teams](https://code.claude.com/docs/en/agent-teams) enabled:** they
+  run as teammates and **message each other directly** to negotiate the plan. Same roles,
+  just direct messaging.
 
 ## How to use them
 
