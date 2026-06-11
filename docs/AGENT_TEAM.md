@@ -106,36 +106,29 @@ runs in-process rather than split panes. Requires Claude Code v2.1.32+.
 
 ## Automated tooling research
 
-The **researcher** is the one agent that runs on its own schedule, not just on demand. A
-GitHub Actions workflow,
+The **researcher** is the one agent that runs **fully automatically**. A GitHub Actions
+workflow,
 [`.github/workflows/agent-tooling-research.yml`](../.github/workflows/agent-tooling-research.yml),
-wakes **weekly**, has the researcher scout new MCP servers / plugins / addons for the team,
-writes a dated report to [`docs/research/`](research/), and **opens a PR** for the team to
-review. You can also run it manually from the **Actions** tab → *Run workflow*.
+wakes **weekly**, has the researcher scan its tracks, writes a dated report to
+[`docs/research/`](research/), and **opens a PR** for the team to review. You can also trigger
+it anytime from the **Actions** tab → *Run workflow*.
 
-**Authentication** — the workflow needs a Claude credential. Any one of these works (checked
-in this order):
+**Setup — one maintainer, once.** The automation runs under a single shared credential:
 
-1. **Subscription token (recommended if you have Claude Pro/Max):** generate a long-lived
-   OAuth token locally with `claude setup-token`, then add it as a secret named
-   `CLAUDE_CODE_OAUTH_TOKEN` (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`). Usage draws on your
-   subscription quota — no per-token API bill. Note it **shares the same limits as your
-   interactive Claude usage**, and the token is account-level — store it only as a secret and
-   regenerate it if it leaks.
-2. **API key:** add an `ANTHROPIC_API_KEY` secret (`gh secret set ANTHROPIC_API_KEY`) from
-   [console.anthropic.com](https://console.anthropic.com). Pay-as-you-go; best for heavy or
-   predictable automation.
-3. **Manual fallback:** run it from the **Actions** tab → *Run workflow* and paste an API key
-   into the input. ⚠ A value typed into a workflow input is **not** a secret — it's visible in
-   the run metadata. The workflow masks it from logs, but treat the key as exposed and
-   **rotate it afterward**. Prefer option 1 or 2.
+1. A maintainer generates a Claude **OAuth token** from their Pro/Max subscription:
+   `claude setup-token`.
+2. Add it as a repository secret named `CLAUDE_CODE_OAUTH_TOKEN`
+   (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`).
+3. Install the [Claude GitHub app](https://github.com/apps/claude) so it can open PRs.
 
-If no credential is available, the job **skips cleanly** instead of failing. PR creation also
-expects the [Claude GitHub app](https://github.com/apps/claude) to be installed (or run
-`/install-github-app` from Claude Code in this repo).
+Because it runs on a subscription token, there's **no per-token API cost** — the weekly run
+draws on that one maintainer's plan quota (so pick someone on Max, or be mindful of Pro
+limits). An `ANTHROPIC_API_KEY` secret works as an alternative if you'd rather use a
+pay-as-you-go key. If neither secret is set, the job **skips cleanly** instead of failing.
 
-Each run consumes Claude API tokens and Actions minutes, and nothing it finds is adopted
-until the team reviews the PR.
+> The token is account-level — keep it only as a repository secret and regenerate it
+> (`claude setup-token` again) if it ever leaks. Nothing the researcher finds is adopted until
+> the team reviews its PR.
 
 ## How this fits the rest of our tooling
 
