@@ -46,6 +46,8 @@ jobs:
       - name: Checkout repository
         if: steps.cred.outputs.ok == 'true'
         uses: actions/checkout@v4
+        with:
+          ref: main # always branch off main, regardless of which branch triggered the workflow
 
       - name: Run research scout
         if: steps.cred.outputs.ok == 'true'
