@@ -1,22 +1,23 @@
 name: Agent Tooling Research
 
-# Periodically scout MCP servers, plugins, and addons that could help PerFiApp's
-# agent team, then open a PR with a dated research report for the team to review.
+# Fully automated: weekly (and on demand), the `researcher` agent scouts developments that
+# could help PerFiApp's agent team, then opens a PR with a dated report for the team to review.
 #
-# ── One-time setup (repo admin) ────────────────────────────────────────────────
-#   1. Install the Claude GitHub app:  https://github.com/apps/claude
-#      (or run `/install-github-app` from Claude Code inside this repo).
-#   2. Add an `ANTHROPIC_API_KEY` repository secret:
-#      Settings → Secrets and variables → Actions → New repository secret.
-#   Until both are done, the scheduled run will fail to authenticate.
+# ── One-time setup ─────────────────────────────────────────────────────────────
+# A single maintainer provides the credential the automation runs under:
+#   1. Generate a Claude OAuth token from your Pro/Max subscription:  claude setup-token
+#   2. Add it as a repository secret named CLAUDE_CODE_OAUTH_TOKEN
+#      (Settings -> Secrets and variables -> Actions, or `gh secret set CLAUDE_CODE_OAUTH_TOKEN`).
+#   3. Install the Claude GitHub app for PR creation:  https://github.com/apps/claude
+# Because it runs on a subscription token, there is no per-token API cost; usage draws on that
+# one maintainer's plan quota. (An ANTHROPIC_API_KEY secret also works as an alternative.)
 #
-# Note: each run uses Claude API tokens and GitHub Actions minutes (billed).
-# Trigger manually anytime from the Actions tab → "Run workflow".
+# If no credential secret is set, the job skips cleanly instead of failing.
 
 on:
   schedule:
     - cron: "0 13 * * 1" # every Monday at 13:00 UTC
-  workflow_dispatch: {} # manual trigger
+  workflow_dispatch: {} # allow manual runs from the Actions tab
 
 permissions:
   contents: write # create a branch and commit the report
@@ -26,17 +27,40 @@ jobs:
   research:
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Check credential
+        id: cred
+        env:
+          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$OAUTH" ] || [ -n "$KEY" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY secret set — skipping."
+          fi
 
-      - name: Run tooling researcher
+      - name: Checkout repository
+        if: steps.cred.outputs.ok == 'true'
+        uses: actions/checkout@v4
+        with:
+          ref: main # always branch off main, regardless of which branch triggered the workflow
+
+      - name: Run research scout
+        if: steps.cred.outputs.ok == 'true'
         uses: anthropics/claude-code-action@v1
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }} # lets the agent use the gh CLI
         with:
+          # Prefer the subscription OAuth token; fall back to an API key if that's what's set.
+          # GitHub masks secret values in logs automatically.
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
           prompt: |
             Use the `researcher` agent to run its full scan across its research tracks
             (agent tooling, AI cost/token optimization, model updates, agent evaluation,
@@ -57,3 +81,15 @@ jobs:
             --max-turns 40
             --model claude-sonnet-4-6
             --allowedTools "Agent,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash"
+
+      - name: Token usage summary
+        if: steps.cred.outputs.ok == 'true' && always()
+        run: |
+          LOG=/home/runner/work/_temp/claude-execution-output.json
+          if [ ! -f "$LOG" ]; then
+            echo "No execution log found — skipping usage summary."
+            exit 0
+          fi
+          RESULT=$(jq -r 'select(.type == "result") | "\(.subtype) | turns: \(.num_turns) | duration: \((.duration_ms / 1000) | floor)s | cost: $\(.total_cost_usd | . * 100 | round | . / 100)"' "$LOG" 2>/dev/null || echo "Could not parse log")
+          echo "### Research scout usage"
+          echo "$RESULT"

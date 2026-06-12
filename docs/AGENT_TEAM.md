@@ -106,22 +106,29 @@ runs in-process rather than split panes. Requires Claude Code v2.1.32+.
 
 ## Automated tooling research
 
-The **researcher** is the one agent that runs on its own schedule, not just on demand. A
-GitHub Actions workflow,
+The **researcher** is the one agent that runs **fully automatically**. A GitHub Actions
+workflow,
 [`.github/workflows/agent-tooling-research.yml`](../.github/workflows/agent-tooling-research.yml),
-wakes **weekly**, has the researcher scout new MCP servers / plugins / addons for the team,
-writes a dated report to [`docs/research/`](research/), and **opens a PR** for the team to
-review. You can also run it manually from the **Actions** tab → *Run workflow*.
+wakes **weekly**, has the researcher scan its tracks, writes a dated report to
+[`docs/research/`](research/), and **opens a PR** for the team to review. You can also trigger
+it anytime from the **Actions** tab → *Run workflow*.
 
-It needs a **one-time setup by a repo admin**:
+**Setup — one maintainer, once.** The automation runs under a single shared credential:
 
-1. Install the [Claude GitHub app](https://github.com/apps/claude) (or run
-   `/install-github-app` from Claude Code in this repo).
-2. Add an `ANTHROPIC_API_KEY` repository secret (**Settings → Secrets and variables →
-   Actions**).
+1. A maintainer generates a Claude **OAuth token** from their Pro/Max subscription:
+   `claude setup-token`.
+2. Add it as a repository secret named `CLAUDE_CODE_OAUTH_TOKEN`
+   (`gh secret set CLAUDE_CODE_OAUTH_TOKEN`).
+3. Install the [Claude GitHub app](https://github.com/apps/claude) so it can open PRs.
 
-Each run consumes Claude API tokens and Actions minutes, and nothing it finds is adopted
-until the team reviews the PR.
+Because it runs on a subscription token, there's **no per-token API cost** — the weekly run
+draws on that one maintainer's plan quota (so pick someone on Max, or be mindful of Pro
+limits). An `ANTHROPIC_API_KEY` secret works as an alternative if you'd rather use a
+pay-as-you-go key. If neither secret is set, the job **skips cleanly** instead of failing.
+
+> The token is account-level — keep it only as a repository secret and regenerate it
+> (`claude setup-token` again) if it ever leaks. Nothing the researcher finds is adopted until
+> the team reviews its PR.
 
 ## How this fits the rest of our tooling
 
