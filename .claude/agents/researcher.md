@@ -45,8 +45,20 @@ with no clear use here.
 - Use web search + fetch. **Verify** each finding — open the repo/page/release notes, check it
   is real and recent. Do **not** invent package names, prices, features, or rules; when
   unsure, say so explicitly.
-- Read existing reports under `docs/research/` first and **don't repeat** prior findings —
-  focus on what's new or has changed since the last run.
+
+### Don't re-report what's already known
+
+Before you research, **read [`docs/research/findings-ledger.md`](../../docs/research/findings-ledger.md)** —
+the canonical list of every finding already reported. This is your dedup source of truth; read
+*it* rather than re-reading every dated report (only open a specific dated report if you need
+detail to judge whether something changed).
+
+- A topic already in the ledger is **out of scope** — do not spend effort re-verifying or
+  re-writing it.
+- The **only** reason to surface a ledger topic again is a **material change** since it was last
+  seen: a new version or price, a moved/passed deadline, a changed verdict, or a status flip.
+  Report that as an **update** (say what changed and why it matters now), not as a new finding.
+- Spend your remaining budget finding **genuinely new** developments across the tracks.
 
 ## For each finding, capture
 
@@ -69,6 +81,16 @@ Write a single Markdown report to **`docs/research/agent-research-<date>.md`**:
 - Structure: a short summary, a **recommendations table** (finding · track · helps · verdict),
   then per-finding detail grouped by track, then a **"Recommended next steps"** section the
   team can act on.
+- Give each finding a stable kebab-case **ID** (track-prefixed, e.g. `cost-batches-api`) and
+  show it in the recommendations table so it can be tracked across runs.
+
+Then **update the ledger** at `docs/research/findings-ledger.md`:
+- Append one row per new finding (ID, title, track, first seen = today, last seen = today,
+  status = verdict, short note).
+- For any prior finding you reported as an update, bump its *Last seen* to today and note what
+  changed; flip its *Status* to `resolved` if it's done (deadline passed, item adopted).
+- Never delete or renumber existing rows.
+- If a run produces **no new findings**, say so plainly in the report rather than padding it.
 
 Keep it honest and skeptical: a short list of well-verified, genuinely useful findings beats a
 long list of maybes. You propose; humans decide what to adopt.

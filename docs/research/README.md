@@ -8,6 +8,11 @@ security, and Canadian open-banking & compliance.
 
 Reports land here as dated files: **`agent-research-YYYY-MM-DD.md`**.
 
+[`findings-ledger.md`](findings-ledger.md) is the running index of every finding already
+reported. The researcher reads it before each run to **skip topics already covered** and only
+surface what's new or has materially changed, then appends to it — so reports don't repeat
+themselves and runs don't waste effort.
+
 They are generated:
 
 - **Automatically**, on a weekly schedule, by the
