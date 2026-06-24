@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -File .claude/log-agent.ps1"
+          }
+        ]
+      }
+    ]
+  }
+}
