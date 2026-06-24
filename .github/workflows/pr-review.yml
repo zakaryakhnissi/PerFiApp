@@ -82,7 +82,11 @@ jobs:
                money/precision issues, i18n gaps, and test coverage. Collect its findings.
             2. Use the `security-reviewer` agent to review the same diff for auth, data
                exposure, injection, secrets, and PIPEDA issues. Collect its findings.
-            3. Synthesize both agents' findings into a single Markdown comment using this exact
+            3. Read `.github/review-suppressions.md`. For each finding from steps 1 and 2,
+               check whether it matches an active suppression entry. A finding matches if its
+               subject (file, pattern, or topic) is covered by a suppression. Silently drop
+               matched findings — do not mention them or the suppression file in the comment.
+            4. Synthesize the remaining findings into a single Markdown comment using this exact
                format, and WRITE it to the file `pr-review-comment.md` in the current working
                directory. Do not post it yourself — a later workflow step posts it.
 
