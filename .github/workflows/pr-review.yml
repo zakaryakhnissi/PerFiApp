@@ -5,8 +5,6 @@ name: Automated PR Review
 # If no credential secret is set, the job skips cleanly instead of failing.
 #
 # Security notes:
-#   - Actions are pinned to full commit SHAs (not mutable tags) to prevent supply-chain
-#     compromise. Update the SHA and the trailing "# vN" comment together.
 #   - Do NOT switch the trigger to `pull_request_target`: that would run with secrets
 #     available to fork-submitted code and leak CLAUDE_CODE_OAUTH_TOKEN / ANTHROPIC_API_KEY.
 #   - The agent never sees attacker-controlled refs in its prompt (the diff is handed to it
@@ -46,7 +44,7 @@ jobs:
 
       - name: Checkout repository
         if: steps.cred.outputs.ok == 'true'
-        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0 # full history so git diff works against base branch
 
@@ -63,7 +61,7 @@ jobs:
       - name: Run code and security review
         id: review
         if: steps.cred.outputs.ok == 'true'
-        uses: anthropics/claude-code-action@80b31826338489861333dc17217865dfe8085cdc # v1
+        uses: anthropics/claude-code-action@v1
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
