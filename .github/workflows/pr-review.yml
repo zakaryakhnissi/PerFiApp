@@ -64,21 +64,23 @@ jobs:
             || echo "# No suppressions" > "$RUNNER_TEMP/review-suppressions.md"
 
       # Deterministic path detection for spec/constitution files — the agent reads this flag
-      # rather than reasoning over the diff, preventing both false positives (src/tasks/tasks.md)
-      # and false negatives from large truncated diffs.
+      # rather than reasoning over the diff, preventing false positives and false negatives
+      # from large truncated diffs. Output is captured once to avoid TOCTOU between the
+      # grep gate and the diagnostic print. Generic names (spec.md etc.) are anchored to the
+      # repo root (^name\.md$) so deep paths like src/utils/spec.md do not match.
       - name: Detect spec and constitution files in diff
         if: steps.cred.outputs.ok == 'true'
         run: |
-          if git diff --name-only origin/main...HEAD \
-            | grep -qE '^\.specify/|^CLAUDE\.md$|^docs/PDR_PerFiApp\.md$|(^|/)(constitution|spec|plan|tasks)\.md$'
-          then
-            echo "true" > "$RUNNER_TEMP/spec-touched.flag"
-            echo "Spec/constitution files detected — spec-lead-reviewer will be invoked."
-            git diff --name-only origin/main...HEAD \
-              | grep -E '^\.specify/|^CLAUDE\.md$|^docs/PDR_PerFiApp\.md$|(^|/)(constitution|spec|plan|tasks)\.md$' \
-              | sed 's/^/  /'
+          CHANGED=$(git diff --name-only origin/main...HEAD)
+          SPEC_FILES=$(echo "$CHANGED" \
+            | grep -E '^\.specify/|^CLAUDE\.md$|^docs/PDR_PerFiApp\.md$|^(constitution|spec|plan|tasks)\.md$' \
+            || true)
+          if [ -n "$SPEC_FILES" ]; then
+            printf 'true' > "$RUNNER_TEMP/spec-touched.flag"
+            echo "Spec/constitution files detected — spec-lead-reviewer will be invoked:"
+            echo "$SPEC_FILES" | sed 's/^/  /'
           else
-            echo "false" > "$RUNNER_TEMP/spec-touched.flag"
+            printf 'false' > "$RUNNER_TEMP/spec-touched.flag"
             echo "No spec/constitution files in diff — spec-lead-reviewer will be skipped."
           fi
 
@@ -91,6 +93,10 @@ jobs:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
           github_token: ${{ secrets.GITHUB_TOKEN }}
           show_full_output: true
+          # SAFE interpolations in this prompt: runner.* context only (runner.temp).
+          # NEVER interpolate github.event.pull_request.* fields (title, body, head_ref,
+          # labels, etc.) — those are attacker-controlled and would bypass the "treat diff
+          # as untrusted DATA" safeguard, creating a direct prompt-injection channel.
           prompt: |
             You are reviewing a pull request on PerFiApp, a Canada-first bilingual (EN/FR)
             personal-finance FinOS.
