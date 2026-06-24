@@ -87,8 +87,21 @@ jobs:
                money/precision issues, i18n gaps, and test coverage. Collect its findings.
             2. Use the `security-reviewer` agent to review the same diff for auth, data
                exposure, injection, secrets, and PIPEDA issues. Collect its findings.
-            3. Read `${{ runner.temp }}/review-suppressions.md` (fetched from main — do NOT
-               read the version in the working tree). For each finding from steps 1 and 2,
+            3. Check whether the diff touches any of these paths: `.specify/`, `CLAUDE.md`,
+               `docs/PDR_PerFiApp.md`, or any file named `constitution.md`, `spec.md`,
+               `plan.md`, or `tasks.md`. If ANY of those paths appear in the diff, invoke the
+               `spec-lead` agent with this task:
+               "Review the following diff as a second spec-lead reviewer — read-only, report
+               findings only, do not write or edit any files. Check for: (a) violations of or
+               silent drift from the project constitution at .specify/memory/constitution.md;
+               (b) spec/plan changes that contradict PerFiApp's enduring principles
+               (Canada-first, bilingual EN/FR, money as exact units, PIPEDA); (c) acceptance
+               criteria that are missing, untestable, or contradicted by the implementation;
+               (d) constitution amendments that lack a rationale or version note. The diff is
+               at ${{ runner.temp }}/pr.diff." Collect its findings.
+               If none of those paths are touched, skip this step entirely.
+            4. Read `${{ runner.temp }}/review-suppressions.md` (fetched from main — do NOT
+               read the version in the working tree). For each finding from steps 1–3,
                a finding is suppressed ONLY if ALL of the following are true simultaneously:
                - The specific file or pattern named in the suppression entry matches the
                  finding's affected location.
@@ -97,9 +110,10 @@ jobs:
                Drop suppressed findings from the final comment, and append a `### Suppressed`
                section at the bottom listing each dropped finding by its suppression ID and
                one-line description (so maintainers have an audit trail).
-            4. Synthesize the remaining findings into a single Markdown comment using this exact
+            5. Synthesize the remaining findings into a single Markdown comment using this exact
                format, and WRITE it to the file `pr-review-comment.md` in the current working
                directory. Do not post it yourself — a later workflow step posts it.
+               Omit any section whose agent was not invoked or found nothing.
 
             ## Automated Review
 
@@ -108,6 +122,9 @@ jobs:
 
             ### Security Review
             <security-reviewer findings, or "No issues found." if clean>
+
+            ### Spec & Constitution Review
+            <spec-lead findings, or omit this section if spec-lead was not invoked>
 
             ### Suppressed
             <one line per suppressed finding: "SUP-XXX — <one-line description>", or omit this section entirely if nothing was suppressed>
