@@ -29,6 +29,8 @@ roles evolve through normal pull requests, and everyone stays in sync.
 | **implementer** | Writing the code for an approved plan, matching existing conventions. |
 | **test-engineer** | Writing and running meaningful tests; verifying behavior. |
 | **code-reviewer** | Reviewing a diff for correctness, money/precision, security, and i18n (read-only). |
+| **security-reviewer** | Dedicated deeper security & privacy pass — auth, IDOR, secret leakage, data exposure, PIPEDA — for changes touching auth, storage, APIs, or financial data flows (read-only). |
+| **debugger** | Investigating failures — CI errors, runtime exceptions, test regressions — to find the root cause and propose a fix (read-only on source). |
 | **researcher** | Scouting developments that make the team better/cheaper/safer/more compliant — tooling, AI cost optimization, model updates, evals, toolchain releases, AI/fintech security, and Canadian compliance; writes a dated report. Runs weekly via CI and on demand. |
 
 Each agent is tuned for PerFiApp: **Canada-first**, **bilingual (EN/FR)**, money handled as
@@ -104,14 +106,26 @@ runs in-process rather than split panes. Requires Claude Code v2.1.32+.
 - **Change a role**: edit its file and open a PR — reviewers see exactly what changed.
 - Keep descriptions sharp; that text is what Claude uses to decide when to delegate.
 
-## Automated tooling research
+## Automated workflows
 
-The **researcher** is the one agent that runs **fully automatically**. A GitHub Actions
-workflow,
+Two agents run **automatically** via GitHub Actions. Both use the same credential and both
+**skip cleanly** if no credential secret is set.
+
+### Weekly tooling research
+
+The **researcher** runs **fully automatically**. A GitHub Actions workflow,
 [`.github/workflows/agent-tooling-research.yml`](../.github/workflows/agent-tooling-research.yml),
 wakes **weekly**, has the researcher scan its tracks, writes a dated report to
 [`docs/research/`](research/), and **opens a PR** for the team to review. You can also trigger
 it anytime from the **Actions** tab → *Run workflow*.
+
+### Automated PR review
+
+On every pull request to `main`,
+[`.github/workflows/pr-review.yml`](../.github/workflows/pr-review.yml) runs the
+**code-reviewer** and **security-reviewer** agents over the diff and posts their combined
+findings as a PR comment. The findings are **advisory** — they don't block the merge, they
+give reviewers a head start.
 
 **Setup — one maintainer, once.** The automation runs under a single shared credential:
 

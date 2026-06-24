@@ -1,0 +1,95 @@
+name: Automated PR Review
+
+# Runs the code-reviewer and security-reviewer agents on every PR targeting main.
+# Posts findings as a PR comment. Requires CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY.
+# If no credential secret is set, the job skips cleanly instead of failing.
+
+on:
+  pull_request:
+    branches: [main]
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Check credential
+        id: cred
+        env:
+          OAUTH: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          if [ -n "$OAUTH" ] || [ -n "$KEY" ]; then
+            echo "ok=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ok=false" >> "$GITHUB_OUTPUT"
+            echo "No CLAUDE_CODE_OAUTH_TOKEN or ANTHROPIC_API_KEY secret set — skipping."
+          fi
+
+      - name: Checkout repository
+        if: steps.cred.outputs.ok == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # full history so git diff works against base branch
+
+      - name: Run code and security review
+        if: steps.cred.outputs.ok == 'true'
+        uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          show_full_output: true
+          prompt: |
+            You are reviewing a pull request on PerFiApp, a Canada-first bilingual (EN/FR)
+            personal-finance FinOS.
+
+            The base branch is ${{ github.base_ref }} and the PR branch is
+            ${{ github.head_ref }}. The diff to review is:
+              git diff origin/${{ github.base_ref }}...HEAD
+
+            Do the following in order:
+            1. Use the `code-reviewer` agent to review the diff for correctness bugs,
+               money/precision issues, i18n gaps, and test coverage. Collect its findings.
+            2. Use the `security-reviewer` agent to review the same diff for auth, data
+               exposure, injection, secrets, and PIPEDA issues. Collect its findings.
+            3. Synthesize both agents' findings into a single PR comment using this format:
+
+            ## Automated Review
+
+            ### Code Review
+            <code-reviewer findings, or "No issues found." if clean>
+
+            ### Security Review
+            <security-reviewer findings, or "No issues found." if clean>
+
+            ---
+            *Posted by the automated review workflow — findings are advisory.*
+
+            Post the comment to PR #${{ github.event.pull_request.number }} using the gh CLI:
+              gh pr comment ${{ github.event.pull_request.number }} --body "<comment>"
+
+            Do not approve or request changes — comment only.
+          claude_args: |
+            --max-turns 30
+            --model claude-sonnet-4-6
+            --allowedTools "Agent,Read,Grep,Glob,Bash,WebSearch,WebFetch"
+
+      - name: Token usage summary
+        if: steps.cred.outputs.ok == 'true' && always()
+        run: |
+          LOG=/home/runner/work/_temp/claude-execution-output.json
+          if [ ! -f "$LOG" ]; then
+            echo "No execution log found — skipping usage summary."
+            exit 0
+          fi
+          jq -r 'select(.type == "result") | "PR review | turns: \(.num_turns) | duration: \((.duration_ms / 1000) | floor)s | cost: $\(.total_cost_usd | . * 100 | round | . / 100)"' "$LOG" 2>/dev/null || echo "Could not parse log"
