@@ -7,6 +7,14 @@ silently omits any finding whose topic matches an active suppression.
 Adding an entry here does not close the issue — it stops the noise until the team is ready
 to act. Each entry carries a `Reopen on` condition so it doesn't stay suppressed forever.
 
+## How suppression matching works for spec-lead-reviewer findings
+
+Spec-lead-reviewer findings reference **constitution and spec file paths**
+(e.g. `.specify/memory/constitution.md`, `docs/PDR_PerFiApp.md`) rather than source-code
+paths. Suppression entries intended to cover spec-lead findings must match those paths — a
+suppression keyed to a source file will never match a spec-lead finding, even if the same
+PR touches both.
+
 ---
 
 ## Active suppressions
