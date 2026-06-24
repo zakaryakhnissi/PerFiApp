@@ -45,7 +45,7 @@ jobs:
 
       - name: Checkout repository
         if: steps.cred.outputs.ok == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: main # always branch off main, regardless of which branch triggered the workflow
 
