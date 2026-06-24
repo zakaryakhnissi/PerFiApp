@@ -83,7 +83,7 @@ jobs:
             --allowedTools "Agent,Read,Write,Edit,Glob,Grep,WebSearch,WebFetch,Bash"
 
       - name: Token usage summary
-        if: steps.cred.outputs.ok == 'true' && always()
+        if: always() && steps.cred.outputs.ok == 'true'
         run: |
           LOG=/home/runner/work/_temp/claude-execution-output.json
           if [ ! -f "$LOG" ]; then
