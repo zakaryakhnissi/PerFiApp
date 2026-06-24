@@ -95,3 +95,4 @@ Versioning of this constitution follows semantic versioning: MAJOR for backward-
 All PRs and reviews must verify compliance with these principles. Use [CLAUDE.md](../../CLAUDE.md) for runtime development guidance.
 
 **Version**: 2.0.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-19
+**Approved by**: smail882 (product owner) — 2026-06-24

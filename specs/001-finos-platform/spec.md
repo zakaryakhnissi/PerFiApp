@@ -16,7 +16,7 @@ PerFiApp is a **Canada-first, bilingual (EN/FR) personal-finance operating syste
 
 The product is delivered as **module tabs**, each owning a focused domain. The defining property of FinOS is **integration**: a best-card suggestion checks budget *and* utilization *and* rewards together; a deal is only shown if it fits the budget and goals; a bill reminder knows the safe day to pay based on cash-flow runway. Modules are not silos — they read from and write to a shared financial picture through explicit, versioned contracts.
 
-This specification describes the **whole product, organized by module**. It is the umbrella spec from which individual feature specs (one per submodule) are derived. The 40 submodules across 15 product modules are listed in [context/backlog.md](../../context/backlog.md); the competitive rationale for each is in [docs/PDR_PerFiApp.md](../../docs/PDR_PerFiApp.md).
+This specification describes the **whole product, organized by module**. It is the umbrella spec from which individual feature specs (one per submodule) are derived. The 39 submodules across 15 product modules are listed in [context/backlog.md](../../context/backlog.md); the competitive rationale for each is in [docs/PDR_PerFiApp.md](../../docs/PDR_PerFiApp.md).
 
 ### How this spec is organized
 
@@ -46,8 +46,8 @@ All modules inherit the non-negotiable rules in [.specify/memory/constitution.md
 - Q: How does "Cash Advance Lite" reconcile with the Constitution's "FinOS never moves money"? → A: Drop Cash Advance Lite entirely — Cash Safety stays purely predictive (runway + micro-actions), no advance feature.
 - Q: What is the canonical "healthy utilization threshold" default? → A: Four bands — < 10% optimal (credit-boosting), < 30% healthy, 30–50% warn, > 50% hard-avoid.
 - Q: What is the balance staleness window for runway/cash-safety advice? → A: Deferred to planning (intentionally) — concrete staleness windows are set in the plan; the spec keeps the Fresh-or-Flagged rule without fixing numeric windows.
-- Q: What is the data-deletion SLA (PIPEDA / Law 25)? → A: Within 7 days of a verified deletion request (cascade across spine + all modules + Plaid token revocation).
-- Q: What is the primary user authentication method + MFA stance? → A: Deferred to planning — primary auth factor and MFA policy are decided in the plan; the spec retains the Security & Least Privilege requirements (FR-X-009/010) without fixing the mechanism.
+- Q: What is the data-deletion SLA (PIPEDA / Law 25)? → A: Within 7 days of a verified deletion request (cascade across spine + all modules + aggregation-provider token revocation).
+- Q: What is the primary user authentication method + MFA stance? → A: Deferred to planning — primary auth factor and full MFA policy are decided in the plan; the spec retains the Security & Least Privilege requirements (FR-X-009/010) and bounds the deferral via **FR-X-017** (a skeleton auth threat model is required in the Module 0 spec, and MFA is mandatory for aggregation-token issuance, household-role changes, and data export/deletion). The specific mechanism is not fixed here.
 
 ---
 
@@ -152,6 +152,7 @@ A forward-looking runway that predicts low balances **before** they cause missed
 2. **Given** a predicted shortfall, **When** the guard responds, **Then** it proposes micro-actions (move a bill, pause a roundup, re-sequence payments) to close the gap, and never offers or brokers a cash advance.
 3. **Given** a roundup rule and a qualifying purchase, **When** the rule runs, **Then** the rounded amount is **proposed** for routing to debt/TFSA/savings per plan and recorded idempotently once the user confirms.
 4. **Given** the balance feeding the runway is stale, **When** the runway is requested, **Then** the runway is withheld or flagged rather than computed on old data.
+5. **Given** a roundup proposal the user already confirmed, **When** the same event arrives again (e.g. a network retry before the acknowledgement is received), **Then** no second routing is proposed or recorded (idempotent).
 
 **Cross-Module Links**:
 - **Consumes**: `AccountState`, `CashFlowForecast`, `GoalState`, plus `BillCalendar` (Bills) and `PaymentSchedule` (Pay) when present.
@@ -243,6 +244,7 @@ Turn financial concerns into tasks linked to the data behind them — a bill, me
 1. **Given** a bill or goal, **When** a task is created from it, **Then** the task carries a live link to that entity.
 2. **Given** a money-aware task is completed, **When** it is checked off, **Then** the linked entity's status updates (e.g., bill marked handled).
 3. **Given** several tasks and known paydays/due dates, **When** scheduling runs, **Then** tasks are distributed to suitable days factoring paydays and bill dates.
+4. **Given** a money-aware task already marked complete, **When** a duplicate completion event arrives (e.g. a retry), **Then** the linked entity's status is updated at most once and no duplicate side-effect or audit event is produced.
 
 **Cross-Module Links**:
 - **Consumes**: `BillCalendar`, `GoalState`, `MerchantGraph`, `CashFlowForecast`, `PaymentSchedule`.
@@ -265,6 +267,7 @@ An opt-in game layer where streaks and XP are earned for **real** financial prog
 1. **Given** the game layer is enabled, **When** a real financial action is completed, **Then** the tied habit's streak and XP advance (and do not advance for non-real actions).
 2. **Given** the daily ritual, **When** the user starts it, **Then** it presents live bills to review, roundups to approve, and notifications to clear.
 3. **Given** the game layer is disabled, **When** actions complete, **Then** functionality is unaffected and no game UI appears.
+4. **Given** a real financial action that has already advanced a streak, **When** the same underlying event is delivered again (e.g. a network retry), **Then** the streak and XP advance at most once (idempotent) and do not double-count.
 
 **Cross-Module Links**:
 - **Consumes**: `TaskCompletionEvents` (Tasks), `RoundupProposals` (Cash Safety), `BillCalendar` (Bills), `NotificationDigest` (Inbox), `GoalState`.
@@ -286,6 +289,7 @@ Short, structured sessions for money stress that pair emotional support with con
 
 1. **Given** a stressor (e.g., a debt or bill), **When** a stress pack runs, **Then** it provides a short session **and** generates a concrete linked action.
 2. **Given** the evening wind-down, **When** it runs, **Then** outstanding money worries are converted into tasks/goals before the guided wind-down begins.
+3. **Given** a stress pack that already created a linked action for a stressor, **When** the same session is re-run or re-submitted, **Then** a duplicate task/goal is not created for that stressor.
 
 **Cross-Module Links**:
 - **Consumes**: `BillCalendar`, `GoalState`, `RunwayForecast`, `CreditState` (to identify stressors).
@@ -352,6 +356,7 @@ A vault for receipts and warranties auto-linked to transactions and big-ticket i
 1. **Given** an uploaded receipt, **When** matching runs, **Then** it links to the corresponding transaction in the spine.
 2. **Given** a big-ticket purchase, **When** a warranty is stored, **Then** an expiry reminder is created and surfaced via Tasks/Inbox.
 3. **Given** a stored document, **When** the user exports or shares it, **Then** access respects the configured sharing controls and the action is audited.
+4. **Given** an uploaded receipt that could match two transactions of equal amount at the same merchant on the same day, **When** matching runs, **Then** the system does not silently auto-link to the wrong one; it surfaces the ambiguity for user confirmation and records the chosen resolution.
 
 **Cross-Module Links**:
 - **Consumes**: `TransactionStream`, `MerchantGraph`.
@@ -373,6 +378,7 @@ Pre-built, Canada-specific playbooks for life events (move, job change, new baby
 
 1. **Given** a life event, **When** a playbook starts, **Then** a Canada-specific checklist is generated and individual steps pull live FinOS data.
 2. **Given** a notebook page, **When** it references a FinOS figure, **Then** the figure stays current automatically (no manual copy-paste) and carries a freshness timestamp.
+3. **Given** a playbook step that generates a task or goal, **When** the same step is re-run, **Then** it does not create a duplicate task/goal for that step (idempotent generation).
 
 **Cross-Module Links**:
 - **Consumes**: broad read access to `BudgetState`, `GoalState`, `RunwayForecast`, `BillCalendar`, `DocumentVault`, `TripBudget`, `CreditState`.
@@ -445,7 +451,7 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **FR-X-002 (Money exactness)**: All monetary values MUST be stored and computed in integer minor units or arbitrary-precision decimal — never binary floating point — with explicit, unit-tested rounding.
 - **FR-X-003 (Recommend, never move)**: FinOS MUST NOT move money; every money action is surfaced for explicit, per-action user execution, and any state FinOS writes on the user's behalf MUST be idempotent and safe to retry.
 - **FR-X-004 (CAD + time-to-goal)**: Every monetary value shown to the user MUST be expressed in CAD with time-to-goal context where a goal applies.
-- **FR-X-005 (Bilingual)**: All user-facing text, notifications, and content MUST be available in both EN and FR; missing translations MUST fail validation.
+- **FR-X-005 (Bilingual & locale-correct formatting)**: All user-facing text, notifications, and content MUST be available in both EN and FR; missing translations MUST fail validation. All monetary values, percentages, and dates MUST be rendered through the platform locale formatter for the active locale (en-CA vs fr-CA), so that fr-CA output uses the comma decimal separator, space thousands separator, and trailing currency symbol (e.g. `1 234,56 $`) and locale-correct date formats. A value formatted with the wrong locale convention (e.g. `$1,234.56` shown to an fr-CA user) is a bilingual defect even when the surrounding labels are translated.
 - **FR-X-006 (Explainability)**: Every recommendation MUST carry the inputs and reasoning that produced it, displayable to the user and reproducible in debugging.
 - **FR-X-007 (Audit trail)**: Every user-confirmed action and every change to financial state MUST be recorded in an immutable, append-only audit trail kept separate from debug logs.
 - **FR-X-008 (Freshness)**: Every value sourced from an external feed MUST carry a freshness timestamp; recommendations on stale data MUST be flagged or withheld.
@@ -453,10 +459,12 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **FR-X-010 (Least privilege & threat model)**: Access defaults to least privilege; any feature touching credentials, aggregation tokens, or another person's financial data MUST ship with a threat model and enforce authZ on every cross-user boundary.
 - **FR-X-011 (Contracts & versioning)**: All cross-module data exchange MUST flow through schema-defined contracts (no shared mutable state); contracts MUST be semantically versioned and covered by consumer and provider contract tests in CI.
 - **FR-X-012 (Graceful degradation)**: External-source failures (timeouts, rate limits) MUST degrade gracefully with retries and MUST NOT produce incorrect money advice.
-- **FR-X-013 (Privacy & compliance)**: Canadian financial data MUST be handled under PIPEDA and Quebec Law 25, with data export and deletion available and retention limited to each feature's genuine need. A verified deletion request MUST be honored within 7 days, cascading across the spine, all module data, and revocation of the user's Plaid connection/tokens. FinOS presents informational decision support only and MUST NOT be presented as regulated financial advice.
+- **FR-X-013 (Privacy & compliance)**: Canadian financial data MUST be handled under PIPEDA and Quebec Law 25, with data export and deletion available and retention limited to each feature's genuine need. A verified deletion request MUST be honored within 7 days, cascading across the spine, all module data, and revocation of the user's aggregation-provider connection/tokens. Where the user connects an email source, only sender identity and derived classifications/metadata (never raw message bodies) are retained after parsing; on revocation of email access, all raw email content and any derived data attributable only to that access MUST be deleted within the same 7-day window. FinOS presents informational decision support only and MUST NOT be presented as regulated financial advice.
 - **FR-X-014 (Observability)**: Data ingestion, sync, and recommendation paths MUST emit structured logs that redact PII and monetary values.
 - **FR-X-015 (Performance)**: Cold-start and module switches MUST complete under 300 ms on mid-range Canadian devices.
 - **FR-X-016 (Accessibility)**: The UI MUST meet WCAG 2.1 AA with bilingual screen-reader labels.
+- **FR-X-017 (Authentication & MFA)**: The authentication surface — the gateway to a user's entire aggregated financial picture — MUST be covered by a skeleton threat model in the Module 0 spec before implementation begins. MFA MUST be required for high-risk actions: issuing or re-authorizing aggregation tokens, modifying household roles or scopes, and triggering data export or deletion. The primary authentication factor and the full MFA policy are finalized in the plan, but password-only authentication for these high-risk actions is explicitly out of bounds.
+- **FR-X-018 (Template compliance gate)**: The Spec Kit templates (`plan-template.md`, `spec-template.md`, `tasks-template.md`) MUST be brought into compliance with Constitution v2.0.0 — concrete Constitution Check gates in the plan template, mandatory threat-model and money-correctness fields in the spec template, and contract-test / audit / redaction task categories in the tasks template — before the first P1 submodule spec is generated from them. No P1 submodule spec may be authored from a non-compliant template.
 
 ### Functional Requirements by Module
 
@@ -467,9 +475,10 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **FR-CORE-004**: System MUST let users define goals and MUST compute time-to-goal and required contributions.
 - **FR-CORE-005**: System MUST expose `AccountState`, `TransactionStream`, `MerchantGraph`, `BudgetState`, `CashFlowForecast`, `CreditState`, and `GoalState` as versioned, freshness-stamped contracts.
 - **FR-CORE-006**: System MUST provide a secure connection/consent flow for linking Canadian banks and cards, isolate the aggregation provider behind the Module 0 contracts (so it is swappable without changing consumers), and manage connection credentials/tokens per FR-X-009 (encrypted, never logged, rotatable).
+- **FR-CORE-007 (Aggregation token lifecycle & threat model)**: Aggregation access tokens MUST be stored in a dedicated secrets store or hardware-backed key vault — never in an application database column alongside user data — and encrypted with keys the application database cannot access. Tokens MUST be rotated on session invalidation, suspected compromise, a credential/role change (privilege demotion), and on a maximum-age schedule. When a household member is removed while other members remain connected to the same institution, the system MUST perform **partial revocation** that invalidates only the departing member's token without disrupting remaining members. The Module 0 spec MUST include a threat model enumerating at minimum an aggregation-token exfiltration scenario and its mitigations (most aggregation tokens do not self-expire, so explicit revocation paths are mandatory).
 
 **Module 1 — Rewards & Loyalty**
-- **FR-REW-001**: System MUST aggregate loyalty/points balances across Canadian and global programs and value each in CAD.
+- **FR-REW-001**: System MUST aggregate loyalty/points balances across Canadian and global programs and value each in CAD. Per FR-X-002, points redemption rates MUST be stored as arbitrary-precision decimals (never binary float); points-to-CAD valuation MUST compute in arbitrary precision and round the final result half-up to CAD minor units before storing or displaying; and at least one unit-test fixture (e.g. a large balance such as 500,000 points × 1.05 cpp = $5,250.00 CAD) MUST guard against cent-level slippage.
 - **FR-REW-002**: System MUST maintain a Canada-first, bilingual card knowledgebase (earn rates, categories, credits, perks, insurance).
 - **FR-REW-003**: System MUST recommend a best card for a merchant/moment using earn rate, budget headroom, and utilization; it MUST warn when a card's use would push per-card or aggregate utilization into the 30–50% band and MUST NOT recommend a card whose use would push utilization above 50% (hard-avoid). See canonical utilization bands under CreditState.
 - **FR-REW-004**: System MUST track welcome-bonus minimum spends and warn when meeting one would exceed healthy budget.
@@ -518,11 +527,11 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **FR-FOC-002**: System MUST convert outstanding money worries into tasks/goals before a guided wind-down.
 
 **Module 10 — Inbox & Notifications**
-- **FR-INB-001**: System MUST detect promotional senders and offer unsubscribe/roll-up/keep, prioritizing impulse-spend triggers.
+- **FR-INB-001**: System MUST detect promotional senders and offer unsubscribe/roll-up/keep, prioritizing impulse-spend triggers; after parsing, the system retains only sender identity and classification — not raw message-body content (see FR-X-013).
 - **FR-INB-002**: System MUST consolidate module alerts into at most one or two daily bilingual, actionable digests, while allowing critical alerts to break through.
 
 **Module 11 — Travel & Trips**
-- **FR-TRV-001**: System MUST build itineraries from forwarded confirmations, linked to the travel budget with FX-converted CAD costs.
+- **FR-TRV-001**: System MUST build itineraries from forwarded confirmations, linked to the travel budget with FX-converted CAD costs. Per FR-X-002, FX rates MUST be stored as arbitrary-precision decimals; foreign-currency-to-CAD conversion MUST compute in arbitrary precision and round half-up to CAD minor units before storing or displaying; and at least one unit-test fixture per conversion path MUST guard against rounding drift.
 - **FR-TRV-002**: System MUST show lifetime travel spend and cost-per-trip/day, with optional carbon, and flag insurance gaps against card perks.
 
 **Module 12 — Life Admin & Docs**
@@ -534,11 +543,11 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **FR-WS-002**: System MUST provide a notebook whose references to FinOS figures stay current automatically with freshness.
 
 **Module 14 — Household & Family**
-- **FR-HH-001**: System MUST enforce fine-grained, per-module roles/permissions with authZ checked on every cross-user request, denying and auditing unauthorized access.
+- **FR-HH-001**: System MUST enforce fine-grained, per-module roles/permissions with authZ checked on every cross-user request, denying and auditing unauthorized access. All cross-user boundary checks MUST be enforced **server-side** on every API request and MUST NOT trust any client-supplied parameter (e.g. a `memberId` in the request) as the source of truth; UI-layer filtering alone does NOT satisfy this requirement. The Household threat model MUST enumerate IDOR (insecure direct object reference) and horizontal privilege escalation as explicit attack scenarios with mitigations.
 - **FR-HH-002**: System MUST support chore-based allowances and kid-friendly goal trackers.
 
 **Module 15 — Social & Accountability**
-- **FR-SOC-001**: System MUST share only the explicitly chosen progress metric within a circle, exposing nothing else from a member's finances.
+- **FR-SOC-001**: System MUST share only the explicitly chosen progress metric within a circle, exposing nothing else from a member's finances. The shared `CircleProgress` MUST be a **server-side-computed projection** (e.g. percentage complete, streak count) — never raw monetary amounts, account identifiers, or institution names — filtered before transmission. For a user who is simultaneously a household member and a circle member, the circle projection MUST NOT leak any household-scoped data the circle was not explicitly granted.
 - **FR-SOC-002**: System MUST update shared circle views from real goal/habit data and MUST remove a member's data from the circle on revocation, audited.
 
 ### Key Entities
@@ -579,20 +588,21 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **SC-005 (Trust via explainability)**: 100% of recommendations can display "why" with their inputs; in usability testing at least 80% of users say they understand why a recommendation was made.
 - **SC-006 (Freshness safety)**: 0 recommendations are served on data past its staleness threshold without a visible stale flag.
 - **SC-007 (No money moved)**: 0 instances of FinOS moving money on a user's behalf; 100% of money actions require explicit per-action user execution.
-- **SC-008 (Bilingual parity)**: 100% of user-facing strings, alerts, and content are present in both EN and FR; 0 single-language leaks in shipped builds.
+- **SC-008 (Bilingual parity & locale formatting)**: 100% of user-facing strings, alerts, and content are present in both EN and FR; 0 single-language leaks in shipped builds; and 100% of displayed monetary values, percentages, and dates use the active locale's formatting conventions (e.g. fr-CA renders `1 234,56 $`, not `$1,234.56`).
 - **SC-009 (Notification restraint)**: Median money-related notifications per user per day ≤ 2, with critical alerts still delivered the same day.
 - **SC-010 (Performance)**: 95th-percentile cold-start and module-switch times are under 300 ms on mid-range Canadian devices.
 - **SC-011 (Accessibility)**: The product passes WCAG 2.1 AA audits with bilingual screen-reader labels on all interactive elements.
 - **SC-012 (Contract reliability)**: 100% of cross-module contracts have passing consumer and provider tests in CI before release; 0 breaking contract changes ship without a migration plan and deprecation window.
-- **SC-013 (Privacy rights)**: 100% of users can export and delete their data; verified deletion requests complete within 7 days, including Plaid connection/token revocation.
+- **SC-013 (Privacy rights)**: 100% of users can export and delete their data; verified deletion requests complete within 7 days, including aggregation-provider connection/token revocation.
 - **SC-014 (Onboarding)**: A new user can connect a first institution and see a populated Points Wallet, runway, and one recommendation within 10 minutes.
-- **SC-015 (Household safety)**: 0 cross-user data exposures in authorization testing; every denied cross-user access is audited.
+- **SC-015 (Household safety)**: 0 cross-user data exposures in authorization testing exercised at the **API layer** (not only the UI); every denied cross-user access is audited.
+- **SC-016 (Template compliance)**: 0 P1 submodule specs are generated before `plan-template.md`, `spec-template.md`, and `tasks-template.md` are confirmed compliant with Constitution v2.0.0 (FR-X-018).
 
 ---
 
 ## Assumptions
 
-- **Account-aggregation provider**: Canadian bank/card connections are provided by **Plaid** (Canada region), covering major institutions (RBC, Scotiabank, TD, BMO, CIBC, Tangerine, Amex, and others) via Plaid Link on web and mobile. The spine maps Plaid products to its contracts: Auth + Balance → `AccountState`, Transactions → `TransactionStream`, Liabilities → `CreditState`, Identity → member verification. Where an institution is unavailable through Plaid, manual entry or statement import is the fallback. Plaid is treated as a swappable provider behind the Module 0 contracts so the rest of FinOS stays provider-agnostic.
+- **Account-aggregation provider**: Canadian bank/card connections are provided by a third-party open-banking aggregation provider (Canada region), covering major institutions (RBC, Scotiabank, TD, BMO, CIBC, Tangerine, Amex, and others) via a hosted link/consent flow on web and mobile. The spine maps the provider's data products to its contracts: account + balance → `AccountState`, transactions → `TransactionStream`, liabilities → `CreditState`, identity → member verification. Where an institution is unavailable through the provider, manual entry or statement import is the fallback. The provider is treated as swappable behind the Module 0 contracts so the rest of FinOS stays provider-agnostic. The concrete vendor and its specific product-to-contract mapping are selected during planning (see the Module 0 plan).
 - **Credit data source**: A Canadian credit-bureau feed is available for the Credit module; until then, the module degrades to manual entry.
 - **Scope of "execution"**: FinOS is advisory. Even "autopilot" features (sweeps, roundups, payment sequencing) only propose; the user executes. This is a constitutional constraint, not a v1 limitation.
 - **Platform**: Primary delivery is a mobile-first app for Canadian users; exact platforms (iOS/Android/web) are an implementation choice for planning.
@@ -605,8 +615,8 @@ Small groups that share progress on specific financial challenges, tied to real 
 
 ## Dependencies
 
-- **Plaid (Canada region)** for account/card aggregation — Auth, Balance, Transactions, Identity, and Liabilities products (Module 0, and therefore all modules). Plaid access/link tokens are credentials and fall under FR-X-009 (never stored in plaintext, committed, or logged; rotatable) and require a threat model under FR-X-010.
-- Canadian credit-bureau data (Module 2) — complements Plaid Liabilities with score/report factors.
+- **Account-aggregation provider (Canada region)** for account/card aggregation, supplying account, balance, transaction, identity, and liability data (Module 0, and therefore all modules). The provider's access/link tokens are credentials and fall under FR-X-009 (never stored in plaintext, committed, or logged; rotatable) and require a threat model under FR-X-010 / FR-CORE-007. The specific vendor is chosen during planning.
+- Canadian credit-bureau data (Module 2) — complements the aggregation provider's liability data with score/report factors.
 - Timestamped FX rate source (Modules 0, 6, 11).
 - Card knowledgebase data and card-linked offer feeds (Module 1).
 - Optional user email connection (Modules 4, 10, 11).
