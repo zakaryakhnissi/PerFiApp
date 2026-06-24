@@ -52,11 +52,16 @@ jobs:
       # attacker-controlled refs/branch names out of the LLM prompt and means the agent needs
       # no git/Bash of its own. The trigger restricts the base branch to main, so it is safe
       # to diff against origin/main statically rather than against an interpolated ref.
-      - name: Compute PR diff
+      - name: Compute PR diff and fetch suppressions from main
         if: steps.cred.outputs.ok == 'true'
         run: |
           git diff origin/main...HEAD > "$RUNNER_TEMP/pr.diff"
           echo "Diff size: $(wc -l < "$RUNNER_TEMP/pr.diff") lines"
+          # Always read suppressions from main, never from the PR branch.
+          # This prevents a PR author from silencing their own security review.
+          git show origin/main:.github/review-suppressions.md \
+            > "$RUNNER_TEMP/review-suppressions.md" 2>/dev/null \
+            || echo "# No suppressions" > "$RUNNER_TEMP/review-suppressions.md"
 
       - name: Run code and security review
         id: review
@@ -82,7 +87,17 @@ jobs:
                money/precision issues, i18n gaps, and test coverage. Collect its findings.
             2. Use the `security-reviewer` agent to review the same diff for auth, data
                exposure, injection, secrets, and PIPEDA issues. Collect its findings.
-            3. Synthesize both agents' findings into a single Markdown comment using this exact
+            3. Read `${{ runner.temp }}/review-suppressions.md` (fetched from main — do NOT
+               read the version in the working tree). For each finding from steps 1 and 2,
+               a finding is suppressed ONLY if ALL of the following are true simultaneously:
+               - The specific file or pattern named in the suppression entry matches the
+                 finding's affected location.
+               - The topic described in the suppression entry directly matches the finding's
+                 subject — a file-name match alone is not sufficient.
+               Drop suppressed findings from the final comment, and append a `### Suppressed`
+               section at the bottom listing each dropped finding by its suppression ID and
+               one-line description (so maintainers have an audit trail).
+            4. Synthesize the remaining findings into a single Markdown comment using this exact
                format, and WRITE it to the file `pr-review-comment.md` in the current working
                directory. Do not post it yourself — a later workflow step posts it.
 
@@ -93,6 +108,9 @@ jobs:
 
             ### Security Review
             <security-reviewer findings, or "No issues found." if clean>
+
+            ### Suppressed
+            <one line per suppressed finding: "SUP-XXX — <one-line description>", or omit this section entirely if nothing was suppressed>
 
             ---
             *Posted by the automated review workflow — findings are advisory.*
