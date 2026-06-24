@@ -70,11 +70,15 @@ jobs:
 
             Then:
             1. Determine today's date in YYYY-MM-DD form.
-            2. Write the report to docs/research/agent-research-<date>.md, following the
-               structure the researcher agent defines. Read existing files in docs/research/
-               first and focus on what is new or changed since the last report.
-            3. Create a branch named research/agent-research-<date>, commit only the new
-               report, push it, and open a pull request to main titled
+            2. Read docs/research/findings-ledger.md FIRST to see what has already been
+               reported, and exclude those topics unless something has materially changed
+               (new version/price, moved deadline, changed verdict). Spend effort only on what
+               is new or changed since the last run.
+            3. Write the report to docs/research/agent-research-<date>.md, following the
+               structure the researcher agent defines, then update docs/research/findings-ledger.md
+               (append new findings, bump changed ones) as that agent describes.
+            4. Create a branch named research/agent-research-<date>, commit the new report AND
+               the updated findings-ledger.md, push it, and open a pull request to main titled
                "research: agent research scan <date>" that summarizes the top recommendations.
             Do not modify anything outside docs/research/.
           claude_args: |
