@@ -1,3 +1,45 @@
+<!--
+SYNC IMPACT REPORT
+Version change: 1.0.0 → 2.0.0
+Bump rationale: MAJOR — adds new NON-NEGOTIABLE and governance-level principles
+  (Money Is Exact; Security & Least Privilege; Explainable & Auditable; Fresh or
+  Flagged) and redefines the module-boundaries principle to mandate contract tests
+  and semantic versioning. These introduce new mandatory gates, so existing code
+  and specs may now be non-compliant — a backward-incompatible governance change.
+
+Modified principles:
+  - IV. Module Boundaries with Cross-Module Data
+      → VII. Module Boundaries, Contracts & Versioning
+      (now mandates consumer/provider contract tests and semver of contracts/APIs)
+  - V. Simplicity & YAGNI → IX. Simplicity & YAGNI (renumbered, text unchanged)
+
+Added principles:
+  - IV.  Money Is Exact (NON-NEGOTIABLE)
+  - V.   Security & Least Privilege
+  - VI.  Explainable & Auditable
+  - VIII. Fresh or Flagged (External Data Integrity)
+
+Added / expanded sections:
+  - Quality Standards → Privacy & Compliance: expanded to PIPEDA + Quebec Law 25 +
+    Consumer-Driven Banking, data retention/right-to-deletion/export, and a
+    not-a-registered-advisor advice-liability stance.
+  - Quality Standards → Observability: clarified PII/monetary-value redaction and
+    separation of the audit trail from debug logs, for consistency with Principle V.
+
+Removed sections: none.
+
+Templates flagged PENDING (deferred per user decision: "constitution file only"):
+  - ⚠ .specify/templates/plan-template.md — Constitution Check gate (line 43) is an
+       empty placeholder; not yet wired to these principles.
+  - ⚠ .specify/templates/spec-template.md — no mandatory threat-model or
+       money-correctness fields.
+  - ⚠ .specify/templates/tasks-template.md — no contract-test / audit / redaction
+       task categories.
+
+Follow-up TODOs:
+  - Wire concrete Constitution Check gates into plan-template.md when ready.
+-->
+
 # FinOS Constitution
 
 ## Core Principles
@@ -11,16 +53,28 @@ FinOS is built for Canadian programs, banks, cards, and rules by default. All mo
 ### III. Test-First (NON-NEGOTIABLE)
 TDD mandatory: tests written → user approved → tests fail → implement. Red-Green-Refactor strictly enforced. No feature ships without tests covering the happy path and the key edge cases specific to Canadian banking rules, bilingual content, and multi-module data dependencies.
 
-### IV. Module Boundaries with Cross-Module Data
-Each module tab (Rewards, Credit, Cash Safety, Bills, etc.) owns its domain and exposes a clean API to other modules. Cross-module intelligence (e.g. a best-card recommendation that checks budget AND credit utilization) is implemented through explicit data contracts, not shared mutable state.
+### IV. Money Is Exact (NON-NEGOTIABLE)
+All monetary values MUST use integer minor units (cents) or arbitrary-precision decimal — never binary floating point. Rounding rules MUST be explicit, documented, and unit-tested. Every financial calculation MUST be pure, deterministic, and verified against known fixtures, including Canadian tax, fee, and interest edge cases. Any state FinOS writes on the user's behalf (roundup ledgers, scheduled reminders, goal progress) MUST be idempotent and safe to retry. FinOS recommends actions only — it MUST NOT execute money movement on the user's behalf; every money action is surfaced for explicit, per-action user execution. Rationale: floating-point money and non-deterministic math are the most common and most damaging fintech defects.
 
-### V. Simplicity & YAGNI
+### V. Security & Least Privilege
+Financial data and PII MUST be encrypted in transit (TLS) and at rest. Bank-aggregation tokens, OAuth credentials, and secrets MUST NEVER be stored in plaintext, committed to the repository, or written to logs, and MUST be rotatable. Authentication and authorization MUST be enforced on every cross-user boundary, including Household & Family roles and permissions. Any feature that touches credentials, aggregation tokens, or another person's financial data MUST include a threat model in its spec. Access defaults to least privilege. Rationale: an aggregator concentrates a user's entire financial life — a single leak is catastrophic.
+
+### VI. Explainable & Auditable
+Every recommendation MUST carry the inputs and reasoning that produced it ("why this card", "why wait to buy") so it can be shown to the user and reproduced during debugging. Every action the user confirms and every change to financial state MUST be recorded in an immutable, append-only audit trail. When inputs are missing, stale, or conflicting, the fail-safe default is to withhold the recommendation and ask — never guess. Rationale: a finance assistant earns trust only when its advice is transparent and traceable.
+
+### VII. Module Boundaries, Contracts & Versioning
+Each module tab (Rewards, Credit, Cash Safety, Bills, etc.) owns its domain and exposes a clean API to other modules. Cross-module intelligence (e.g. a best-card recommendation that checks budget AND credit utilization) MUST flow through explicit, schema-defined data contracts — never shared mutable state. Every contract MUST have consumer and provider contract tests that run in CI. Contracts and public APIs MUST follow semantic versioning; breaking changes require a version bump, a migration plan, and a deprecation window. Rationale: cross-module recommendations are only as reliable as the contracts they depend on.
+
+### VIII. Fresh or Flagged
+Every value sourced from an external feed (bank balances, credit data, FX rates, deals) MUST carry a freshness timestamp. Recommendations computed on stale data MUST be flagged or withheld — e.g. no runway calculation on a multi-day-old balance. External-source failures MUST degrade gracefully and MUST NOT produce incorrect money advice; timeouts, retries, and rate-limit handling are mandatory on all ingestion paths. Rationale: confident advice from stale data is worse than no advice.
+
+### IX. Simplicity & YAGNI
 Start simple. Every piece of complexity must be justified by a real user need. No pre-emptive abstractions. Three similar cases before extracting a helper. Features ship at MVP scope; no gold-plating.
 
 ## Quality Standards
 
-- **Observability**: Structured logging required on all data ingestion, sync, and recommendation paths. Text I/O ensures debuggability.
-- **Privacy by default**: No financial data leaves the device or service boundary without explicit user consent. Canadian financial data handled under PIPEDA.
+- **Observability**: Structured logging required on all data ingestion, sync, and recommendation paths. Logs MUST redact PII and monetary values; the immutable audit trail (Principle VI) is kept separate from debug logs. Text I/O ensures debuggability.
+- **Privacy & Compliance**: No financial data leaves the device or service boundary without explicit user consent. Canadian financial data is handled under PIPEDA and Quebec's Law 25; data aggregation follows Canada's Consumer-Driven Banking (open banking) standards. Users have the right to export and delete their data, and retention is limited to what each feature genuinely needs. FinOS provides informational decision support only and is not a registered financial advisor; recommendations are not regulated financial advice.
 - **Performance**: Cold-start and module-switch under 300 ms on mid-range Canadian devices.
 - **Accessibility**: WCAG 2.1 AA minimum; bilingual screen-reader labels required.
 
@@ -28,13 +82,16 @@ Start simple. Every piece of complexity must be justified by a real user need. N
 
 - Specs written in `.specify/` before any implementation begins.
 - All PRs verified against this constitution before merge.
-- Breaking changes to cross-module data contracts require a migration plan in the PR.
+- Breaking changes to data contracts follow Principle VII (version bump + migration plan + deprecation window).
+- Features touching credentials, aggregation tokens, or cross-user financial data include a threat model (Principle V).
 - Complexity must be justified in the PR description. Unexplained complexity is grounds for rejection.
 
 ## Governance
 
 This constitution supersedes all other practices. Amendments require a written rationale, approval from the product owner, and a migration plan for existing code.
 
+Versioning of this constitution follows semantic versioning: MAJOR for backward-incompatible governance or principle removals/redefinitions, MINOR for new principles or materially expanded guidance, PATCH for clarifications and wording.
+
 All PRs and reviews must verify compliance with these principles. Use [CLAUDE.md](../../CLAUDE.md) for runtime development guidance.
 
-**Version**: 1.0.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-10
+**Version**: 2.0.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-19
