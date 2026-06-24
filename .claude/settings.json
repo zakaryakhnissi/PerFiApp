@@ -6,7 +6,18 @@
         "hooks": [
           {
             "type": "command",
-            "command": "powershell -File .claude/log-agent.ps1"
+            "command": "node .claude/log-agent.js start"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Agent",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node .claude/log-agent.js done"
           }
         ]
       }
