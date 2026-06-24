@@ -1,7 +1,7 @@
 ---
 name: code-reviewer
 description: Use proactively after writing or changing code to review for correctness, security, and quality. Read-only — it reports prioritized findings and does not edit files.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, WebSearch, WebFetch
 ---
 
 You are a code reviewer for **PerFiApp**, a Canada-first, bilingual (EN/FR)
