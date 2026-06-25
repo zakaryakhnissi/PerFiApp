@@ -111,7 +111,7 @@ Aggregate every loyalty balance and card perk in one place, translate it to CAD 
 
 **Cross-Module Links**:
 - **Consumes**: `BudgetState`, `CashFlowForecast`, `CreditState` (utilization), `MerchantGraph`, `GoalState` from the Spine.
-- **Provides**: `CardLineup`, `PointsValuation`, `BestCardRecommendation`, `OfferCatalog` to Pay & Payment Optimization, Shopping & Deals, Travel, and Household.
+- **Provides**: `CardLineup`, `PointsValuation`, `BestCardRecommendation`, `OfferCatalog`, `StatusState` to Pay & Payment Optimization, Shopping & Deals, Travel, and Household.
 
 ---
 
@@ -181,7 +181,7 @@ Surface every recurring charge, categorize it by necessity and budget impact, gu
 
 **Cross-Module Links**:
 - **Consumes**: `TransactionStream`, `MerchantGraph`, `RunwayForecast`, `BudgetState`, `GoalState`.
-- **Provides**: `BillCalendar`, `SubscriptionInventory`, `RecurringObligations` to Cash Safety, Pay, Tasks, Shopping, and Inbox.
+- **Provides**: `BillCalendar`, `SubscriptionInventory`, `RecurringObligations`, `FreeTrialExpiry` to Cash Safety, Pay, Tasks, Shopping, and Inbox.
 
 ---
 
@@ -601,6 +601,7 @@ Small groups that share progress on specific financial challenges, tied to real 
 - **SC-014 (Onboarding)**: A new user can connect a first institution and see a populated Points Wallet, runway, and one recommendation within 10 minutes.
 - **SC-015 (Household safety)**: 0 cross-user data exposures in authorization testing exercised at the **API layer** (not only the UI); every denied cross-user access is audited.
 - **SC-016 (Template compliance)**: 0 P1 submodule specs are generated before `plan-template.md`, `spec-template.md`, and `tasks-template.md` are confirmed compliant with Constitution v2.1.0 (FR-X-018).
+- **SC-017 (Data residency)**: 100% of Canadian users' financial data and PII is stored and processed on Canadian-region infrastructure; any subprocessor that would process data outside Canada is identified, disclosed to users, and covered by a PIPEDA accountability agreement before go-live (FR-X-020).
 
 ---
 

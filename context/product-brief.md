@@ -77,8 +77,10 @@ FinOS's edge: **every suggestion is evaluated against the full financial picture
 - Bills & Subscriptions: full cancellation/negotiation flow
 - Shopping & Deals: Auto-coupons + Price Watch + Buy-Now-vs-Wait
 - Pay & Payment Optimization: Payment Sequencer
+- Inbox & Notifications: Email Subscription Clean-Up + Unified Money Digest
 
 ### Phase 3 — Life OS Expansion
+- Tasks & To-Dos: Money-Aware Tasks + Smart Scheduling
 - Travel & Trips, Life Admin & Docs, Workspace & Playbooks
 - Household & Family
 - Focus & Mental Health, Habits & Routines
