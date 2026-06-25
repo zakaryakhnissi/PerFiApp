@@ -24,7 +24,7 @@ FinOS's edge: **every suggestion is evaluated against the full financial picture
 |---|---|
 | **Rewards & Loyalty** | Points Wallet, Card Knowledgebase & Perks Vault, Best Card Recommender, Offer Auto-Activation & Sync, Welcome Bonus & Min-Spend Tracker, Statement Credit & Perks Coach, Merchant Insights & Reward Mapping, Deal Radar, Status Tracker, Multi-Profile Rewards Manager |
 | **Credit & Coaching** | Credit Monitor, Due-Date & Utilization Coaching, Credit Builder Actions, Refinance & Card Lineup Optimization |
-| **Cash Safety & Autopilot** | Low-Balance & Fee Guard, Cash Advance Lite, Rules-Based Sweeps & Roundups |
+| **Cash Safety & Autopilot** | Low-Balance & Fee Guard, Rules-Based Sweeps & Roundups |
 | **Bills & Subscriptions** | Subscription Radar, One-Tap Cancellation & Negotiation, Free-Trial Guard, Bill Calendar & Alerts |
 | **Pay & Payment Optimization** | Best Card / Account to Use, Payment Sequencer |
 | **Shopping & Deals** | Auto-Coupons & Codes, Price Watch & Droplist, Buy Now vs Wait Score |

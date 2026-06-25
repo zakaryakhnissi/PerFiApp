@@ -31,7 +31,7 @@ Features are organized by module. Each item is ready to be passed to `/speckit.s
 ## Cash Safety & Autopilot
 
 - [ ] **Low-Balance & Fee Guard** — Forward-looking cash-runway chart predicting when accounts will be too low to safely pay upcoming statements and fees; provides protective micro-actions (move money, delay a discretionary charge, reschedule a bill) to keep the runway safe.
-- [ ] **Rules-Based Sweeps & Roundups** — Auto-moves small amounts when conditions are met; routes to debt, TFSA, or savings based on the user's plan.
+- [ ] **Rules-Based Sweeps & Roundups** — Proposes micro-routing of small amounts (roundups, sweep conditions) to debt, TFSA, or savings based on the user's plan; the user confirms each action explicitly (FinOS never moves money).
 
 ---
 
@@ -121,4 +121,4 @@ Features are organized by module. Each item is ready to be passed to `/speckit.s
 
 ---
 
-_Total: 39 features across 15 modules. Run `/speckit.specify` on any item to generate a full spec._
+_Total: 42 features across 15 modules. Run `/speckit.specify` on any item to generate a full spec._

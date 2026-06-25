@@ -1,5 +1,14 @@
 <!--
 SYNC IMPACT REPORT
+
+Version change: 2.0.0 → 2.1.0
+Bump rationale: MINOR — materially expanded guidance, no breaking changes.
+  - Principle II (Canada-First & Bilingual): adds locale-correct formatting
+    (fr-CA `1 234,56 $`) as part of bilingualism; aligns with spec FR-X-005 / SC-008.
+  - Quality Standards → Privacy & Compliance: adds a maximum-retention bound for
+    dormant accounts and a data-residency clause (Canadian-region storage +
+    cross-border-transfer disclosure); aligns with spec FR-X-019 / FR-X-020.
+
 Version change: 1.0.0 → 2.0.0
 Bump rationale: MAJOR — adds new NON-NEGOTIABLE and governance-level principles
   (Money Is Exact; Security & Least Privilege; Explainable & Auditable; Fresh or
@@ -48,7 +57,7 @@ Follow-up TODOs:
 Every feature must connect to the user's real financial picture. No module works in isolation — every recommendation (use this card, cancel this sub, wait to buy) is evaluated against actual budget, cash-flow, credit state, and goals. A perks suggestion that ignores utilization, or a deal that triggers overspending, is a failure.
 
 ### II. Canada-First & Bilingual
-FinOS is built for Canadian programs, banks, cards, and rules by default. All monetary values are displayed in CAD with time-to-goal context. The UI, notifications, and content are bilingual (EN/FR) throughout — not as an afterthought.
+FinOS is built for Canadian programs, banks, cards, and rules by default. All monetary values are displayed in CAD with time-to-goal context. The UI, notifications, and content are bilingual (EN/FR) throughout — not as an afterthought. Bilingualism includes **locale-correct formatting**: monetary values, percentages, and dates MUST follow the active locale's conventions (e.g. fr-CA renders `1 234,56 $`, not `$1,234.56`); a value formatted with the wrong locale convention is a bilingual defect even when the surrounding labels are translated.
 
 ### III. Test-First (NON-NEGOTIABLE)
 TDD mandatory: tests written → user approved → tests fail → implement. Red-Green-Refactor strictly enforced. No feature ships without tests covering the happy path and the key edge cases specific to Canadian banking rules, bilingual content, and multi-module data dependencies.
@@ -74,7 +83,7 @@ Start simple. Every piece of complexity must be justified by a real user need. N
 ## Quality Standards
 
 - **Observability**: Structured logging required on all data ingestion, sync, and recommendation paths. Logs MUST redact PII and monetary values; the immutable audit trail (Principle VI) is kept separate from debug logs. Text I/O ensures debuggability.
-- **Privacy & Compliance**: No financial data leaves the device or service boundary without explicit user consent. Canadian financial data is handled under PIPEDA and Quebec's Law 25; data aggregation follows Canada's Consumer-Driven Banking (open banking) standards. Users have the right to export and delete their data, and retention is limited to what each feature genuinely needs. FinOS provides informational decision support only and is not a registered financial advisor; recommendations are not regulated financial advice.
+- **Privacy & Compliance**: No financial data leaves the device or service boundary without explicit user consent. Canadian financial data is handled under PIPEDA and Quebec's Law 25; data aggregation follows Canada's Consumer-Driven Banking (open banking) standards. Users have the right to export and delete their data, and retention is limited to what each feature genuinely needs — including a maximum retention bound for dormant accounts, not only deletion-on-request. **Data residency**: Canadian users' financial data and PII are stored and processed on Canadian-region infrastructure; any cross-border transfer or processing MUST be explicitly disclosed and covered by an accountability/transfer agreement (PIPEDA accountability for cross-border transfers), and all subprocessors MUST satisfy this constraint. FinOS provides informational decision support only and is not a registered financial advisor; recommendations are not regulated financial advice.
 - **Performance**: Cold-start and module-switch under 300 ms on mid-range Canadian devices.
 - **Accessibility**: WCAG 2.1 AA minimum; bilingual screen-reader labels required.
 
@@ -94,5 +103,5 @@ Versioning of this constitution follows semantic versioning: MAJOR for backward-
 
 All PRs and reviews must verify compliance with these principles. Use [CLAUDE.md](../../CLAUDE.md) for runtime development guidance.
 
-**Version**: 2.0.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-19
-**Approved by**: smail882 (product owner) — 2026-06-24
+**Version**: 2.1.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-25
+**Approved by**: smail882 (product owner) — v2.0.0 on 2026-06-24, v2.1.0 on 2026-06-25

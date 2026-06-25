@@ -29,9 +29,13 @@
 - [x] Feature meets measurable outcomes defined in Success Criteria
 - [x] No implementation details leak into specification
 
+## Template Compliance Gate (FR-X-018 / SC-016)
+
+- [ ] Spec Kit templates (`plan-template.md`, `spec-template.md`, `tasks-template.md`) confirmed compliant with Constitution v2.1.0 — **blocks authoring any P1 submodule spec until checked**
+
 ## Notes
 
-- This is an **umbrella product spec** covering all 15 modules / 40 submodules, organized by module
+- This is an **umbrella product spec** covering all 15 modules / 42 submodules, organized by module
   per the user's request, with explicit cross-module link blocks (the integration map). Individual
   submodule specs can be derived from each module section via `/speckit-specify`.
 - Cross-module contract names (e.g., `SafeToActSignal`, `RunwayForecast`) are intentionally surfaced
@@ -41,4 +45,4 @@
   than repeating them in every module, to keep the spec readable while keeping every module bound by them.
 - No [NEEDS CLARIFICATION] markers: the source docs (PDR, product brief, backlog, constitution) were
   rich enough to resolve open questions with documented assumptions instead.
-- All items pass — spec is ready for `/speckit-clarify` (optional) or `/speckit-plan`.
+- All content-quality, requirement-completeness, and feature-readiness items pass. The spec may proceed to `/speckit-clarify` (optional) or `/speckit-plan`, but the **Template Compliance Gate above is still open**: no P1 submodule spec may be authored from the templates until they are confirmed compliant with Constitution v2.1.0 (FR-X-018 / SC-016).
