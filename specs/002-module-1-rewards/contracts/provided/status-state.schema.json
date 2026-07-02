@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:rewards/StatusState/1.0.0",
+  "title": "StatusState",
+  "description": "Loyalty/elite status tracking. Provided by Module 1 to Travel and Household.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["program", "profile_id", "tier", "freshness"],
+  "properties": {
+    "program": { "type": "string", "minLength": 1 },
+    "profile_id": { "type": "string", "format": "uuid" },
+    "tier": { "type": "string", "minLength": 1 },
+    "qualifying_progress": {
+      "type": ["string", "null"],
+      "description": "0..1 as a decimal string, or null if not applicable.",
+      "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$"
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

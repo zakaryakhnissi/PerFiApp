@@ -1,0 +1,120 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:focus/WellbeingAction/1.0.0",
+  "title": "WellbeingAction",
+  "description": "A recommend-only proposal, produced by Module 9 (Focus & Mental Health), to create a task or goal linked to a money stressor identified from consumed contracts. Recommend-only: nothing is created until the user confirms it through a Confirm-Action sheet (FR-X-003, FR-FOC-001/002). Focus originates NO monetary value — any money figure shown is read as-provided (integer cents) from the source contract and carries that source's FreshnessStamp; a stale MONEY input is withheld, not asserted as fresh (Constitution IV/VIII). Conversion is idempotent, keyed on (stressor_entity_ref, session_id) (FR-X-003, platform-decisions §4). Provided to Tasks (Module 7) and Workspace (Module 13). Well-being content is sensitive PII: this payload carries only the minimal action label + typed entity reference, never free-text distress journaling (FR-X-013, FR-X-014).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "wellbeing_action_id",
+    "profile_id",
+    "session_id",
+    "stressor",
+    "proposed_action",
+    "informational_only",
+    "idempotency_key",
+    "status",
+    "reasoning",
+    "freshness"
+  ],
+  "properties": {
+    "wellbeing_action_id": { "type": "string", "format": "uuid" },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Scopes ownership. Every read is authZ-checked server-side against the validated session identity, never a client-supplied profile_id (FR-HH-001). Well-being data is private-by-default and never exposed across household members regardless of MemberScope (FR-FOC-005)."
+    },
+    "session_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The FocusSession (stress_pack or wind_down) that produced this proposal. Part of the idempotency key."
+    },
+    "stressor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "entity_ref", "source_contract"],
+      "description": "Typed reference to the underlying entity causing money stress. The action links by reference, never by copying the figure (FR-FOC-001).",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": ["bill", "runway", "goal", "credit_card"],
+          "description": "Stressor class. Safety precedence (display/handling order): runway → credit_card (hard-avoid) → bill → goal (ux-foundations §10.4)."
+        },
+        "entity_ref": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Canonical entity reference, e.g. 'bill:{bill_id}', 'goal:{goal_id}', 'runway:{profile_id}:{period}', 'card:{account_id}'. Part of the idempotency key. Never a free-text description."
+        },
+        "source_contract": {
+          "type": "string",
+          "enum": [
+            "finos:bills/BillCalendar",
+            "finos:cashsafety/RunwayForecast",
+            "finos:spine/GoalState",
+            "finos:spine/CreditState"
+          ],
+          "description": "The consumed contract this stressor was derived from (provider-owned, read-only)."
+        },
+        "money_input_state": {
+          "type": "string",
+          "enum": ["fresh", "stale_withheld", "absent"],
+          "default": "fresh",
+          "description": "State of the stressor's underlying MONEY input. When stale_withheld or absent, money_figure_cents MUST be null and the proposed_action MUST be a non-money action (FR-X-008; the session still pairs support with a concrete action per FR-FOC-001)."
+        },
+        "money_figure_cents": {
+          "type": ["integer", "null"],
+          "default": null,
+          "description": "Optional provider-owned money figure for context (e.g. at-risk bill amount, runway shortfall), integer minor units (CAD cents), read AS-PROVIDED. Focus performs no arithmetic/FX/rounding. MUST be null when money_input_state is not 'fresh'. Rendered via @finos/format (fr-CA '1 234,56 $')."
+        }
+      }
+    },
+    "proposed_action": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["action_type", "label_en", "label_fr", "target"],
+      "description": "The single concrete action proposed (FR-FOC-001: exactly one per session/stressor). Recommend-only.",
+      "properties": {
+        "action_type": {
+          "type": "string",
+          "enum": ["create_task", "create_goal", "refresh_data"],
+          "description": "create_task → dispatched to Tasks (Module 7); create_goal → dispatched to Spine goals; refresh_data → the non-money fallback when the money input is stale/absent."
+        },
+        "label_en": { "type": "string", "minLength": 1, "description": "User-facing action label, English (en-CA)." },
+        "label_fr": { "type": "string", "minLength": 1, "description": "User-facing action label, French (fr-CA). A missing fr label is a bilingual defect (Constitution II, FR-X-005)." },
+        "target": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["target_kind"],
+          "description": "Where the confirmed action is dispatched. Echoes the stressor entity link so the created task/goal stays connected to the source entity.",
+          "properties": {
+            "target_kind": { "type": "string", "enum": ["task", "goal", "none"], "description": "'none' for refresh_data (no task/goal created)." },
+            "linked_entity_ref": { "type": ["string", "null"], "default": null, "description": "The stressor entity_ref the created task/goal links back to. null for refresh_data." }
+          }
+        }
+      }
+    },
+    "informational_only": {
+      "type": "boolean",
+      "const": true,
+      "description": "MUST be true. Focus provides non-clinical, informational decision support only — never clinical advice, never regulated financial advice (Constitution Quality Standards; ux-foundations §8.5)."
+    },
+    "idempotency_key": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Canonically derived from (stressor.entity_ref, session_id). A UNIQUE constraint on this key guarantees a replay/re-run creates at most one task/goal (FR-X-003, platform-decisions §4)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "confirmed", "skipped", "already_captured", "resolved"],
+      "description": "proposed = awaiting user confirmation; confirmed = user approved via Confirm-Action and the task/goal-creation request was dispatched (audited); skipped = user explicitly skipped (re-offered next session); already_captured = a still-open task/goal already exists for this stressor (not re-created); resolved = the underlying stressor resolved out-of-band (per source contract)."
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "Bilingual explainability envelope (FR-X-006): the stressor inputs (kind, entity_ref, source freshness, optional provider money figure) and the rationale that produced this proposal. inputs MUST NOT contain free-text distress content (FR-X-014)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Inherited from the stressor's source contract. is_stale=true on a MONEY input ⇒ money_figure_cents is withheld (null) and the action falls back to refresh_data (FR-X-008)."
+    }
+  }
+}

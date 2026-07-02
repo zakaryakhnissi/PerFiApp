@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:rewards/TransferIntelligence/1.0.0",
+  "title": "TransferIntelligence",
+  "description": "Per-currency transfer partners, ratios, and live bonuses powering the transfer-aware valuation. Provided by Module 1 to Travel and Pay. Ratios and multipliers are arbitrary-precision decimal strings; expired/stale bonuses MUST NOT be applied (FR-REW-007/008).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["currency", "routes"],
+  "properties": {
+    "currency": { "type": "string", "minLength": 1 },
+    "routes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["to_program", "transfer_ratio", "freshness"],
+        "properties": {
+          "to_program": { "type": "string", "minLength": 1 },
+          "transfer_ratio": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+          "min_transfer": { "type": "integer", "minimum": 0 },
+          "active_bonus": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["bonus_multiplier", "window_end", "freshness"],
+            "properties": {
+              "bonus_multiplier": { "type": "string", "pattern": "^[1-9][0-9]*(\\.[0-9]+)?$", "description": "1.30 = +30%; >= 1" },
+              "window_start": { "type": "string", "format": "date" },
+              "window_end": { "type": "string", "format": "date" },
+              "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+            }
+          },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    }
+  }
+}

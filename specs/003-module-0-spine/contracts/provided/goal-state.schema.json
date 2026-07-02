@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/GoalState/1.0.0",
+  "title": "GoalState",
+  "description": "User-defined goals with computed time-to-goal and required contribution (FR-CORE-004). Provided by Module 0; consumed wherever a monetary value needs time-to-goal context (FR-X-004). All amounts integer cents; time-to-goal is computed deterministically from current contribution pace and is freshness-stamped because it depends on balance/cash-flow inputs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "goals", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "goals": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["goal_id", "name", "target_amount", "current_amount", "status"],
+        "properties": {
+          "goal_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "minLength": 1, "description": "User-provided goal name (displayed verbatim; not translated)." },
+          "target_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Target amount, integer cents." },
+          "current_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Amount saved so far toward the goal, integer cents." },
+          "target_date": { "type": ["string", "null"], "format": "date", "description": "Optional user-set deadline; drives ahead/behind computation." },
+          "required_monthly_contribution": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Required monthly contribution to hit target by target_date, integer cents (computed in arbitrary precision, half-up at the final cent)." },
+          "projected_completion_date": { "type": ["string", "null"], "format": "date", "description": "Projected completion at current pace; null if pace is zero/unknown." },
+          "time_to_goal_days": { "type": ["integer", "null"], "minimum": 0, "description": "Computed days to completion at current pace; null if not computable (pace unknown)." },
+          "pace_status": { "type": "string", "enum": ["on_track", "ahead", "behind", "unknown"], "description": "unknown when inputs are insufficient — never guessed." },
+          "status": { "type": "string", "enum": ["active", "achieved", "paused", "archived"] }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "time_to_goal/pace depend on freshness-stamped balance & cash-flow inputs; stale ⇒ pace context flagged." }
+  }
+}

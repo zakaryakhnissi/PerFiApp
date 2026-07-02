@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:bills/SubscriptionInventory/1.0.0",
+  "title": "SubscriptionInventory",
+  "description": "The detected inventory of a profile's recurring charges (RecurringSeries), grouped from the spine's TransactionStream and categorized essential/negotiable/nice-to-have with monthly + annualized CAD budget impact (FR-BILL-001). Provided by Module 4 to Cash Safety, Pay, Tasks, Shopping, and Inbox. Money is integer minor units (cents); no binary float. Suspected-duplicate and pending transactions are excluded upstream so a series is never double-counted. Each series carries a FreshnessStamp; stale TransactionStream flags the impact figures (Constitution VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "series", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "data_completeness": {
+      "type": "string",
+      "enum": ["complete", "partial"],
+      "description": "partial when computed on a partial account picture (mirrors BudgetState.data_completeness); consumers MUST mark dependent views as Incomplete-data (Partial state)."
+    },
+    "series": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["series_id", "merchant_ref", "cadence", "recurring_amount", "necessity", "classification_source", "detection_state", "monthly_impact_cents", "annualized_impact_cents", "freshness"],
+        "properties": {
+          "series_id": { "type": "string", "format": "uuid", "description": "Stable Bills-owned id for the recurring-charge group." },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string", "description": "MerchantGraph node id (finos:spine/MerchantGraph/1.0.0)." } }
+          },
+          "display_name_en": { "type": ["string", "null"], "description": "Localized series label; a series surfaced to users in only one language is a bilingual defect (Constitution II)." },
+          "display_name_fr": { "type": ["string", "null"] },
+          "budget_category": { "type": ["string", "null"], "description": "Canonical BudgetState category key this series ties to (FR-BILL-001)." },
+          "cadence": {
+            "type": "string",
+            "enum": ["weekly", "biweekly", "monthly", "quarterly", "semiannual", "annual", "irregular", "unknown"],
+            "description": "Inferred billing cadence. irregular/unknown ⇒ next_charge_on is an estimate and amount may be a range."
+          },
+          "recurring_amount": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "Inferred per-occurrence recurring amount in integer CAD cents (already FX-converted upstream via TransactionStream.cad_amount for foreign subscriptions)."
+          },
+          "amount_is_estimated": {
+            "type": "boolean",
+            "default": false,
+            "description": "true for variable-amount bills (e.g. utilities); recurring_amount is a last-known/trend estimate, never presented as exact."
+          },
+          "amount_range_low_cents": { "type": ["integer", "null"], "description": "Optional low bound for variable-amount bills (integer cents)." },
+          "amount_range_high_cents": { "type": ["integer", "null"], "description": "Optional high bound for variable-amount bills (integer cents)." },
+          "necessity": {
+            "type": "string",
+            "enum": ["essential", "negotiable", "nice_to_have"],
+            "description": "Necessity classification (FR-BILL-001). Default nice_to_have unless a curated category mapping applies (spec C-3)."
+          },
+          "classification_source": {
+            "type": "string",
+            "enum": ["inferred", "user_override"],
+            "default": "inferred",
+            "description": "user_override always wins over the inferred default (FR-BILL-001; Explainable & Auditable)."
+          },
+          "detection_state": {
+            "type": "string",
+            "enum": ["detected", "confirmed", "dismissed"],
+            "default": "detected",
+            "description": "dismissed series are excluded from the inventory and money math; user confirm/dismiss is an override over the heuristic."
+          },
+          "monthly_impact_cents": {
+            "type": "integer",
+            "description": "Monthly budget impact in integer CAD cents (normalized from cadence). Negative for outflow when consumers treat it as a budget delta; magnitude here is non-negative."
+          },
+          "annualized_impact_cents": {
+            "type": "integer",
+            "description": "Annualized budget impact = monthly_impact_cents x 12 (exact integer; no rounding). Integer CAD cents."
+          },
+          "next_charge_on": { "type": ["string", "null"], "format": "date", "description": "Next predicted charge date; null/estimated when cadence is irregular/unknown." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the underlying TransactionStream this inventory was derived from. Stale ⇒ consumers flag the impact figures." }
+  }
+}

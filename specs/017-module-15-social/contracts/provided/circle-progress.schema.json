@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:social/CircleProgress/1.0.0",
+  "title": "CircleProgress",
+  "description": "The single, server-side-computed, DIMENSIONLESS progress projection a member explicitly shares into an accountability circle (FR-SOC-001). Provided by Module 15 (Social) to Habits and Inbox. This object MUST NOT contain a raw monetary amount, currency, account identifier, or institution name — leak-proof BY CONSTRUCTION (there is no amount/account/institution field). The projection is derived from real GoalState/HabitProgress (never manual entry, FR-SOC-002) and is filtered BEFORE transmission. Carries a FreshnessStamp; a stale projection is FLAGGED (not withheld) because it is a dimensionless secondary metric with no money input (Constitution VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["circle_id", "member_ref", "shared_metric_kind", "metric", "display_label", "freshness"],
+  "properties": {
+    "circle_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The circle this projection belongs to. Read access is authorized server-side against the requester's validated session identity and circle membership — never a client-supplied id (Threat Model, SC-015)."
+    },
+    "member_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["member_id"],
+      "properties": {
+        "member_id": {
+          "type": "string",
+          "format": "uuid",
+          "description": "The circle member whose progress this is. An opaque circle-scoped member id — NOT an account or institution identifier."
+        },
+        "display_name": {
+          "type": ["string", "null"],
+          "description": "The member's chosen circle display name (verbatim; not a financial identifier). May be null for self-rows the client labels locally."
+        },
+        "is_self": {
+          "type": "boolean",
+          "default": false,
+          "description": "true iff this row is the requesting member's own projection (UI distinguishes self from peers)."
+        }
+      }
+    },
+    "shared_metric_kind": {
+      "type": "string",
+      "enum": ["percentage_complete", "streak_count", "pace_status"],
+      "description": "The single dimensionless metric the member explicitly chose to share (FR-SOC-001). Amounts are NOT a valid kind — there is no amount field in this contract."
+    },
+    "metric": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Exactly one of the dimensionless metric values, matching shared_metric_kind. No money, no currency, no FX.",
+      "properties": {
+        "percentage_complete": {
+          "type": ["string", "null"],
+          "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$",
+          "description": "Goal completion ratio in [0,1] as a DECIMAL STRING (string-encoded to defeat JSON float coercion, mirroring platform rate convention). Computed by the spine in arbitrary precision as current_amount/target_amount; Social transmits the ratio ONLY and never the underlying amounts. Display-rounded (e.g. 72,5 %) at the render edge via @finos/format. Present iff shared_metric_kind = percentage_complete."
+        },
+        "streak_count": {
+          "type": ["integer", "null"],
+          "minimum": 0,
+          "description": "Habit streak length (whole days/sessions). Derived from real HabitProgress (FR-SOC-002). Present iff shared_metric_kind = streak_count."
+        },
+        "pace_status": {
+          "type": ["string", "null"],
+          "enum": ["on_track", "ahead", "behind", "unknown", null],
+          "description": "Mirrors GoalState.pace_status; 'unknown' when inputs are insufficient — never guessed. Present iff shared_metric_kind = pace_status."
+        }
+      }
+    },
+    "display_label": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["label_en", "label_fr"],
+      "description": "A NON-FINANCIAL bilingual label for what is being tracked (e.g. a goal nickname like 'Summer trip'). Bilingual to satisfy FR-X-005; MUST NOT encode an amount, account, or institution.",
+      "properties": {
+        "label_en": { "type": "string", "minLength": 1 },
+        "label_fr": { "type": "string", "minLength": 1 }
+      }
+    },
+    "source_kind": {
+      "type": "string",
+      "enum": ["goal", "habit"],
+      "default": "goal",
+      "description": "Whether the projection derives from a GoalState entry or a HabitProgress entry. The underlying source id is NOT exposed (privacy)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the underlying GoalState/HabitProgress. is_stale=true ⇒ consumer FLAGS the projection (stale chip); not withheld (dimensionless secondary metric, no money input). Source-feed-down ⇒ Unavailable state, never a fabricated value (FR-X-008/FR-X-012)."
+    }
+  }
+}

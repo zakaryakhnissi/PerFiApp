@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/BudgetState/1.0.0",
+  "title": "BudgetState",
+  "description": "Category budgets and current headroom derived from TransactionStream inflows/outflows (FR-CORE-003). Provided by Module 0 to all modules. Headroom is a PRIMARY MONEY input to spend recommendations: stale/missing BudgetState MUST cause dependent recommendations to withhold (Constitution IV/VI; mirrors Rewards FR-REW-003). All amounts integer cents.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "period_start", "period_end", "categories", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "period_start": { "type": "string", "format": "date", "description": "Budget period start (typically the user's statement/calendar month)." },
+    "period_end": { "type": "string", "format": "date" },
+    "total_budgeted": { "$ref": "finos:common/MoneyCents/1.0.0" },
+    "total_spent": { "$ref": "finos:common/MoneyCents/1.0.0" },
+    "total_headroom": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "budgeted - spent across all categories, integer cents. Negative = over budget." },
+    "categories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["category", "budgeted", "spent", "headroom"],
+        "properties": {
+          "category": { "type": "string", "minLength": 1, "description": "Canonical category key; bilingual label resolved at the edge." },
+          "budgeted": { "$ref": "finos:common/MoneyCents/1.0.0" },
+          "spent": { "$ref": "finos:common/MoneyCents/1.0.0" },
+          "headroom": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "budgeted - spent for this category, integer cents. Negative = over budget." },
+          "status": { "type": "string", "enum": ["under", "near_limit", "over"], "description": "Derived band; near_limit threshold is a user-adjustable default." }
+        }
+      }
+    },
+    "data_completeness": { "type": "string", "enum": ["complete", "partial"], "description": "partial when computed on a partial account picture; consumers MUST mark recommendations as incomplete-data (Partial state)." },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the underlying balances/transactions this budget was derived from. Stale ⇒ consumers withhold spend recommendations." }
+  }
+}

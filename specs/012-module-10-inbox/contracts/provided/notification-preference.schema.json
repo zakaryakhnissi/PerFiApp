@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:inbox/NotificationPreference/1.0.0",
+  "title": "NotificationPreference",
+  "description": "Per-user notification controls: which tiers may push, digest cadence, quiet hours, and per-source mute (FR-INB-006). Provided so other surfaces (Settings, Home) can read/render the user's controls. NON-NEGOTIABLE invariant: a Critical SAFETY alert is ALWAYS at least surfaced in-app and any push-suppression is audited — preferences can suppress a push but NEVER silently drop a safety alert (Clarifications Q5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "tier_push", "cadence", "non_suppressible_safety"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning user; reads/writes authZ-checked server-side on session identity." },
+    "tier_push": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["critical", "important", "informational"],
+      "description": "Whether each tier may send a push. Informational defaults to in-app only (no push).",
+      "properties": {
+        "critical": { "type": "boolean", "default": true },
+        "important": { "type": "boolean", "default": true },
+        "informational": { "type": "boolean", "default": false }
+      }
+    },
+    "cadence": {
+      "type": "string",
+      "enum": ["morning", "evening", "both"],
+      "default": "evening",
+      "description": "Digest delivery cadence. Default evening-only with morning user-enabled (Clarifications Q1). 'both' still respects the ≤2 money pushes/day budget (SC-009)."
+    },
+    "quiet_hours": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Local-time window in which non-critical pushes are deferred to the next allowed window. A critical breakthrough still delivers but respects the critical ceiling.",
+      "properties": {
+        "start_local": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$", "description": "HH:MM, user's local timezone." },
+        "end_local": { "type": "string", "pattern": "^([01][0-9]|2[0-3]):[0-5][0-9]$" }
+      }
+    },
+    "muted_sources": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "default": [],
+      "description": "module_ids muted from push. A muted source's NON-critical alerts are push-suppressed and shown muted in-app; its CRITICAL safety alerts are still surfaced in-app (non_suppressible_safety)."
+    },
+    "budget_limit": { "type": "integer", "minimum": 0, "default": 2, "description": "Max money-related pushes/day (SC-009 default 2)." },
+    "critical_ceiling": { "type": "integer", "minimum": 0, "default": 1, "description": "Max critical breakthrough pushes/day; excess coalesced (Clarifications Q2)." },
+    "non_suppressible_safety": {
+      "type": "boolean",
+      "const": true,
+      "description": "INVARIANT — always true. A Critical safety alert is always at least surfaced in-app regardless of any preference; push-suppression of a critical alert is recorded in the audit trail. This field cannot be set false (FR-INB-006, Clarifications Q5)."
+    },
+    "updated_at": { "type": ["string", "null"], "format": "date-time", "description": "UTC instant of last preference change (audited)." }
+  }
+}

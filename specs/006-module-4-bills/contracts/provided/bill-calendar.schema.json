@@ -1,0 +1,69 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:bills/BillCalendar/1.0.0",
+  "title": "BillCalendar",
+  "description": "Upcoming bills/recurring charges placed on a calendar, each annotated with its due date and a runway-derived predicted SAFE-TO-PAY date (FR-BILL-003). Provided by Module 4 to Pay, Cash Safety, Tasks, and Inbox. The safe-to-pay date is a MONEY-grounded annotation derived from CashFlowForecast (finos:spine/CashFlowForecast/1.0.0): when that primary money input is stale/missing the safe-to-pay date MUST be withheld (safe_to_pay_on null + safe_to_pay_status='withheld'), never guessed (Constitution VIII/VI). A safe-to-pay date after the due date marks an at-risk bill (Cash Safety precedence). Money is integer minor units (cents).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "entries", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "data_completeness": {
+      "type": "string",
+      "enum": ["complete", "partial"],
+      "description": "partial when computed on a partial account picture; consumers MUST mark dependent views as Incomplete-data."
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["entry_id", "series_ref", "due_on", "amount", "safe_to_pay_status", "at_risk", "freshness"],
+        "properties": {
+          "entry_id": { "type": "string", "format": "uuid" },
+          "series_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["series_id"],
+            "properties": { "series_id": { "type": "string", "format": "uuid", "description": "The RecurringSeries (SubscriptionInventory) this entry belongs to." } }
+          },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string" } }
+          },
+          "due_on": { "type": "string", "format": "date", "description": "The bill's due date (UTC date; rendered to the user's locale at the edge)." },
+          "due_on_is_estimated": { "type": "boolean", "default": false, "description": "true when the due date is estimated for an irregular-cadence series (cadence uncertain)." },
+          "amount": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "Expected amount due, integer CAD cents (FX-converted upstream for foreign bills)."
+          },
+          "amount_is_estimated": { "type": "boolean", "default": false, "description": "true for variable-amount bills." },
+          "safe_to_pay_on": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "Predicted safe-to-pay date derived from CashFlowForecast. null when withheld (stale/missing runway) — consumers MUST NOT substitute the due date."
+          },
+          "safe_to_pay_status": {
+            "type": "string",
+            "enum": ["available", "withheld", "at_risk"],
+            "description": "available = computed from a fresh forecast; withheld = runway stale/missing (money input withheld, Constitution VIII); at_risk = safe-to-pay would fall after due_on (shortfall, Cash Safety precedence)."
+          },
+          "safe_to_pay_source": {
+            "type": "string",
+            "enum": ["cash_flow_forecast", "safe_to_act_signal"],
+            "default": "cash_flow_forecast",
+            "description": "cash_flow_forecast = derived from finos:spine/CashFlowForecast/1.0.0 (default, pre-Cash-Safety, spec C-1); safe_to_act_signal = overridden by Module 3's SafeToActSignal once it ships."
+          },
+          "at_risk": {
+            "type": "boolean",
+            "description": "true iff this bill cannot be safely covered before its due date (CashFlowForecast.shortfall_flag / safe_to_pay_on > due_on). Surfaces the Conflict Banner; safety takes precedence over pay-timing optimization."
+          },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the runway/forecast input behind the safe-to-pay annotation. Stale runway ⇒ safe_to_pay_status='withheld'." }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

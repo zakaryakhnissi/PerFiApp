@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:credit/RefinanceSignals/1.0.0",
+  "title": "RefinanceSignals",
+  "description": "Refinance & card-lineup-optimization signals this module OWNS and PROVIDES (FR-CRD-004, umbrella Module 2 Provides list): for each keep/downgrade/cancel/refinance candidate, the LONG-TERM impact on BOTH rewards value (consumed from Rewards CardLineup) and credit score (from CreditFactors/CreditState). Recommend-only — surfaces a trade-off, never executes a downgrade/cancel/refinance (Constitution IV, FR-X-003). All monetary deltas are integer cents; rates are decimal strings; the score impact is qualitative or a bounded estimate, never a fabricated precise figure. Each signal carries Reasoning and a FreshnessStamp; a signal whose money input (annual fee, rewards value) is stale is WITHHELD, not guessed. Consumers: Rewards, Cash Safety, Pay, Bills, Household.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "signals", "freshness"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ enforced server-side against the validated session identity — never a client-supplied profile_id."
+    },
+    "signals": {
+      "type": "array",
+      "description": "One entry per candidate card/account being evaluated. May be empty (no candidates or all inputs stale → see freshness).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["signal_id", "subject_account_id", "decision", "status", "reasoning"],
+        "properties": {
+          "signal_id": { "type": "string", "format": "uuid" },
+          "subject_account_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The spine account_id / card the signal concerns (cross-referenced to Rewards CardLineup for rewards value)."
+          },
+          "decision": {
+            "type": "string",
+            "enum": ["keep", "downgrade", "cancel", "refinance"],
+            "description": "The candidate decision this signal evaluates. Recommend-only — FinOS never executes it."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["available", "withheld"],
+            "description": "withheld when a primary money input (annual fee, rewards value, balance) or credit input was stale/missing — no figure is asserted; the user is asked to refresh. NEVER guess a money input."
+          },
+          "withheld_reason": {
+            "type": ["string", "null"],
+            "enum": ["stale_rewards_value", "missing_card_lineup", "stale_credit_state", "missing_credit_state", "stale_balance", null],
+            "description": "Populated only when status='withheld'."
+          },
+          "annual_fee_delta": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "Signed annual-fee change in cents if the decision is taken (e.g. negative = fee saved on a downgrade). Integer cents. Absent when status='withheld'."
+          },
+          "annual_rewards_value_delta": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "Signed change in estimated annual rewards value in cents (sourced from Rewards CardLineup/valuation; negative = rewards lost). Computed in arbitrary precision, rounded half-up once at the cent. Absent when status='withheld'."
+          },
+          "net_annual_value_delta": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "annual_rewards_value_delta minus annual_fee_delta effect, integer cents — the headline 'is it worth it on money' figure. Absent when status='withheld'."
+          },
+          "estimated_credit_score_impact": {
+            "type": ["string", "null"],
+            "enum": ["improves", "neutral", "minor_decline", "notable_decline", null],
+            "description": "Qualitative long-term credit-score effect (e.g. cancelling an old card shortens average age → 'minor_decline'/'notable_decline'). Never a fabricated precise point figure; null when not estimable."
+          },
+          "utilization_impact": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "description": "Projected aggregate utilization after the decision, decimal-string fraction (cancelling a card lowers total available limit, raising utilization). Sourced via CreditState; null when not applicable."
+          },
+          "refinance_rate_apr": {
+            "type": ["string", "null"],
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "description": "For decision='refinance': the candidate APR as a decimal-string fraction (e.g. '0.1199' = 11.99%). Sourced + freshness-stamped; null otherwise."
+          },
+          "reasoning": {
+            "$ref": "finos:common/Reasoning/1.0.0",
+            "description": "Inputs + bilingual rationale showing BOTH the rewards-value and credit-score sides of the trade-off (FR-CRD-004, Constitution VI)."
+          }
+        }
+      }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the most-stale input across signals (oldest governs). Stale money inputs ⇒ affected signals withheld (Constitution VIII)."
+    }
+  }
+}

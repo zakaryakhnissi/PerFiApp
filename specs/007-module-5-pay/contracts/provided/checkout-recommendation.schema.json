@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:pay/CheckoutRecommendation/1.0.0",
+  "title": "CheckoutRecommendation",
+  "description": "A single safe-to-pay recommendation for a checkout moment (Module 5, FR-PAY-001). Names ONE payment method (a card or an account) justified by reward value AND runway safety AND utilization effect together (SC-P-002). Recommend-only: FinOS never moves money (Constitution IV, FR-X-003). MUST NOT name a method that introduces a new runway shortfall or pushes utilization > 50% (hard-avoid). Reward value is CONSUMED already-valued from Rewards (BestCardRecommendation/PointsValuation), never re-derived. All money fields are integer minor units (cents); the utilization guardrail follows CreditState bands with the documented-default exception (Constitution VI v2.2.0). Provided to Bills, Cash Safety, Shopping, and Tasks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommendation_id", "profile_id", "merchant_ref", "checkout_amount", "recommended_method", "utilization_warning", "runway_safe", "reasoning", "freshness"],
+  "properties": {
+    "recommendation_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; every cross-profile read is authZ-checked server-side on session identity, never on this client-supplied value (threat model)." },
+    "merchant_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": { "merchant_id": { "type": "string", "description": "Identity from MerchantGraph; not re-resolved here." } }
+    },
+    "checkout_amount": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "The checkout amount applied as an outflow when testing runway safety. Foreign-currency amounts are FX-converted to CAD (arbitrary precision, half-up at the final cent) before reasoning; a stale FX rate withholds (see freshness)."
+    },
+    "recommended_method": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method_type", "method_id"],
+      "description": "Exactly ONE method. MUST NOT be a method whose projected per-card or aggregate utilization exceeds 50%, nor one that introduces a new runway shortfall_flag.",
+      "properties": {
+        "method_type": { "type": "string", "enum": ["card", "account"], "description": "card ⇒ method_id is a CardLineup card_id; account ⇒ method_id is an AccountState account_id." },
+        "method_id": { "type": "string", "format": "uuid" }
+      }
+    },
+    "net_reward_value": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Net CAD reward value of the recommended method for this checkout (reward consumed from Rewards minus known FX/fee costs), integer cents. Summed in integer cents; rate products computed in arbitrary precision and rounded half-up once before inclusion."
+    },
+    "reward_foregone": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Present ONLY when the reward-optimal method was overridden for safety: the CAD reward given up by choosing the safer method instead (integer cents). Drives the trade-off display (SC-P-003)."
+    },
+    "utilization_warning": {
+      "type": "boolean",
+      "description": "true iff the recommended card's projected per-card or aggregate utilization lands in the 30-50% warn band. Always false for an account method."
+    },
+    "utilization_source": {
+      "type": "string",
+      "enum": ["credit_state", "assumed_healthy_default"],
+      "default": "credit_state",
+      "description": "assumed_healthy_default when CreditState was ENTIRELY ABSENT (FR-PAY-001; Constitution VI v2.2.0 documented-default exception). Present-but-stale CreditState withholds instead, so it never produces assumed_healthy_default."
+    },
+    "runway_safe": {
+      "type": "boolean",
+      "description": "true iff applying checkout_amount as an outflow keeps the spine CashFlowForecast projected_lowest_balance at or above the user's safety buffer (no new shortfall_flag). A runway-unsafe method is never the recommended_method; this asserts the chosen method is safe."
+    },
+    "safe_to_act_deferred": {
+      "type": "boolean",
+      "default": false,
+      "description": "true iff Cash Safety's SafeToActSignal overrode a spend-positive pick; pairs with the Conflict Banner (ux-foundations §3.1). Cash Safety has documented precedence over Pay optimization."
+    },
+    "trade_off_en": { "type": ["string", "null"], "description": "Bilingual trade-off note (EN) shown when reward_foregone is present; null when no override occurred." },
+    "trade_off_fr": { "type": ["string", "null"], "description": "Bilingual trade-off note (FR); a missing fr note when an en note exists is a bilingual defect (Constitution II)." },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "MUST cite reward value, runway impact (projected lowest balance after spend), and utilization effect (before/after band) in inputs, with bilingual rationale (SC-P-002/003)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Aggregate freshness of the money inputs this recommendation was computed on (runway/budget/reward). A stale primary money input WITHHOLDS the recommendation rather than emitting a CheckoutRecommendation with is_stale=true (Constitution IV/VI/VIII)."
+    }
+  }
+}

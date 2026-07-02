@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:household/HouseholdRoles/1.0.0",
+  "title": "HouseholdRoles",
+  "description": "The membership and role assignment of a single household (FR-HH-001). Provided by Module 14 to every module so they can resolve WHO is in a household and WHAT role each member holds. This contract carries NO financial values and NO secrets — it is membership/role metadata only. Authorization is NOT performed by reading this contract on the client: every cross-user data access MUST still be enforced server-side against the validated session identity (FR-HH-001, platform-decisions §5). The 'kid' role is constrained (no profile switcher, sees only own goals/habits — ux-foundations §10.6).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["household_id", "members", "freshness"],
+  "properties": {
+    "household_id": { "type": "string", "format": "uuid", "description": "Stable id of the household unit." },
+    "display_name": { "type": "string", "description": "Optional user-chosen household label (displayed verbatim; not translated)." },
+    "members": {
+      "type": "array",
+      "minItems": 1,
+      "description": "All members of the household. Exactly one member MUST hold the 'owner' role.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["member_id", "profile_id", "role", "status", "joined_at"],
+        "properties": {
+          "member_id": { "type": "string", "format": "uuid", "description": "Stable id of this membership edge (household + profile). Distinct from profile_id so the same person could in principle belong to more than one household over time." },
+          "profile_id": { "type": "string", "format": "uuid", "description": "The FinOS profile of this member. NEVER trusted as an authorization source when supplied by a client — acting identity always derives from the validated session (FR-HH-001)." },
+          "role": {
+            "type": "string",
+            "enum": ["owner", "admin", "adult", "teen", "kid"],
+            "description": "owner = founder, exactly one per household, cannot be removed by others; admin = can manage members/roles/scopes (step-up MFA gated, FR-X-017); adult = standard member; teen = limited self-management, parental visibility; kid = constrained (no profile switcher; sees only own KidGoals/habits — ux-foundations §10.6, FR-HH-002)."
+          },
+          "status": {
+            "type": "string",
+            "enum": ["invited", "active", "suspended", "left"],
+            "description": "invited = pending acceptance (no data access yet); active = full membership per role/scope; suspended = membership frozen, all access denied; left = member departed (their links partially revoked, FR-CORE-007). suspended/left members are returned for audit completeness but grant no access."
+          },
+          "guardian_member_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "description": "For role kid/teen: the member_ids of the guardian(s) who manage this minor's allowances/goals and hold visibility into them. Empty for adult/admin/owner."
+          },
+          "joined_at": { "type": "string", "format": "date-time", "description": "UTC instant membership became active (audited)." },
+          "left_at": { "type": ["string", "null"], "format": "date-time", "description": "UTC instant the member left, if status = left." }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the household-roles snapshot. source is typically 'derived' (FinOS-owned, not an external feed) — but is stamped for uniform consumer handling." }
+  }
+}

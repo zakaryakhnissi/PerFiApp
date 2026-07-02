@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:lifeadmin/ReceiptLinks/1.0.0",
+  "title": "ReceiptLinks",
+  "description": "Links between stored receipts and canonical spine transactions (FR-DOC-001). Provided by Module 12 to Tasks, Inbox, Workspace, and Travel (trip receipts). A link is an ASSERTION, not a money mutation: Module 12 never edits TransactionStream — it only references transaction_id. Ambiguous matches (>1 equal-amount/merchant/day candidate) are NOT auto-linked; they are surfaced for user confirmation and the chosen resolution is recorded and auditable (umbrella AS-4). Amounts are integer minor units; no binary float. Each link carries a FreshnessStamp reflecting the matching run.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "links"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; authZ from validated session, never client-supplied (FR-X-010)." },
+    "links": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["link_id", "profile_id", "document_id", "match_state", "match_method", "created_at", "freshness"],
+        "properties": {
+          "link_id": { "type": "string", "format": "uuid", "description": "Stable link id; idempotency key for the matching write (UNIQUE on profile_id+document_id+transaction_id)." },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "document_id": { "type": "string", "format": "uuid", "description": "The receipt document in DocumentVault." },
+          "transaction_id": { "type": ["string", "null"], "format": "uuid", "description": "Resolved TransactionStream transaction id (finos:spine/TransactionStream). null while match_state is 'unmatched' or 'ambiguous_pending'." },
+          "match_state": {
+            "type": "string",
+            "enum": ["matched", "ambiguous_pending", "unmatched", "user_confirmed", "user_rejected"],
+            "description": "matched = confident single match; ambiguous_pending = multiple candidates, awaiting user confirmation (NEVER silently auto-linked, AS-4); unmatched = no candidate; user_confirmed/user_rejected = explicit user resolution (recorded + audited)."
+          },
+          "match_method": { "type": "string", "enum": ["amount_date_merchant", "amount_date", "ocr_reference", "manual"], "description": "How the candidate(s) were found, for explainability (FR-X-006)." },
+          "candidate_transaction_ids": {
+            "type": "array",
+            "items": { "type": "string", "format": "uuid" },
+            "description": "For match_state='ambiguous_pending': the equal-amount/merchant/day candidates surfaced for user disambiguation. Empty otherwise."
+          },
+          "match_confidence": { "type": ["number", "null"], "minimum": 0, "maximum": 1, "description": "Heuristic confidence for the chosen/leading candidate. Informational; ambiguity is resolved by the user, not by a confidence threshold alone." },
+          "receipt_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Receipt total in integer cents used for matching. Compared exactly (integer equality) against the transaction's cad_amount — never via float tolerance." },
+          "reasoning": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["inputs", "rationale_en", "rationale_fr"],
+            "description": "Why this link/ambiguity (FR-X-006). Bilingual rationale (Constitution II).",
+            "properties": {
+              "inputs": { "type": "object", "description": "e.g. receipt_amount_cents, receipt_date, merchant_id, candidate_count." },
+              "rationale_en": { "type": "string", "minLength": 1 },
+              "rationale_fr": { "type": "string", "minLength": 1 }
+            }
+          },
+          "resolved_by": { "type": ["string", "null"], "enum": ["system", "user", null], "description": "'user' when the user confirmed/rejected an ambiguous match; the resolution is recorded in the append-only audit trail (FR-X-007)." },
+          "resolved_at": { "type": ["string", "null"], "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the matching run (source='derived'); reflects the TransactionStream freshness it matched against. A stale transaction feed flags the link rather than asserting a confident match on old data (FR-X-008)." }
+        }
+      }
+    }
+  }
+}

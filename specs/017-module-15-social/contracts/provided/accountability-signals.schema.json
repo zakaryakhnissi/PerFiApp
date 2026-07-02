@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:social/AccountabilitySignals/1.0.0",
+  "title": "AccountabilitySignals",
+  "description": "A bilingual, motivational signal emitted by Module 15 (Social) to the Inbox digest pipeline and to Habits (umbrella Provides list). Signals are NOT money actions and NOT standalone push — Inbox owns notification budget/restraint (ux-foundations §6, SC-009). A signal MUST NOT carry a raw monetary amount, account identifier, or institution name. Any 'contribute to your goal' nudge is evaluated DOWNSTREAM against Cash Safety precedence — Social never overrides a safety signal (umbrella precedence rule).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["signal_id", "circle_id", "recipient_member_ref", "signal_type", "priority_tier", "payload", "freshness"],
+  "properties": {
+    "signal_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Stable id; idempotency/dedup key for the Inbox pipeline (same circle_id + signal_type + subject within 24h = one item, ux-foundations §6.3)."
+    },
+    "circle_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Originating circle. Recipient must be an authorized member; authZ enforced server-side (Threat Model, SC-015)."
+    },
+    "recipient_member_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["member_id"],
+      "properties": {
+        "member_id": { "type": "string", "format": "uuid", "description": "Opaque circle-scoped member id of the recipient — not an account/institution identifier." }
+      }
+    },
+    "signal_type": {
+      "type": "string",
+      "enum": ["peer_milestone", "streak_at_risk", "circle_invite", "circle_closed", "share_revoked", "goal_celebration"],
+      "description": "The motivational event. None of these carry a money amount."
+    },
+    "priority_tier": {
+      "type": "string",
+      "enum": ["informational", "important"],
+      "default": "informational",
+      "description": "Maps to ux-foundations §6.1 notification hierarchy. Social signals are at most 'important' (digest push, bundled) — never 'critical' (Social has no time-sensitive safety event). Inbox enforces the tier and the per-user notification budget."
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["short_description_en", "short_description_fr", "action_url"],
+      "description": "Bilingual short description + deep link, per ux-foundations §6.3. MUST NOT embed a monetary amount, account, or institution.",
+      "properties": {
+        "short_description_en": { "type": "string", "minLength": 1, "description": "EN short description (e.g. 'Maple hit a milestone in Summer trip')." },
+        "short_description_fr": { "type": "string", "minLength": 1, "description": "FR short description (bilingual parity, FR-X-005)." },
+        "action_url": { "type": "string", "minLength": 1, "description": "Deep link into the Social circle view (opened via the Inbox tab, not a module-specific push)." }
+      }
+    },
+    "expires_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "UTC expiry for time-bounded signals (e.g. streak_at_risk). Null for non-expiring informational signals."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the underlying progress the signal is derived from; a stale source ⇒ the signal is suppressed/flagged rather than emitted on old data (FR-X-008)."
+    }
+  }
+}

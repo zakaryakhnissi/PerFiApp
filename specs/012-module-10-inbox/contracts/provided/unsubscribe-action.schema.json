@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:inbox/UnsubscribeAction/1.0.0",
+  "title": "UnsubscribeAction",
+  "description": "A proposed-then-user-confirmed unsubscribe / roll-up / keep decision for a promotional sender, surfaced impulse-spend-first (FR-INB-001). Provided to Shopping (impulse-spend signals) and Tasks. RECOMMEND-NEVER-EXECUTE applies to this consequential non-money action: Inbox proposes, the user confirms via a Confirm-Action sheet, and only then is the unsubscribe attempted and recorded idempotently (Clarifications Q6, FR-X-003 spirit). Inbox NEVER auto-unsubscribes silently. Only sender identity + classification are retained — never raw message bodies (FR-X-013).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["action_id", "profile_id", "sender_ref", "action", "impulse_rank", "reasoning", "execution_state", "freshness"],
+  "properties": {
+    "action_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key. A retried execution MUST NOT re-attempt an already-completed unsubscribe (FR-INB-007)."
+    },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning user. AuthZ enforced server-side on session identity (Threat Model)."
+    },
+    "sender_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sender_id", "display_name"],
+      "description": "Sender IDENTITY + CLASSIFICATION ONLY. No raw email body content is ever carried (FR-INB-001, FR-X-013).",
+      "properties": {
+        "sender_id": { "type": "string", "minLength": 1, "description": "Stable sender identifier (e.g. normalized from-domain + name)." },
+        "display_name": { "type": "string", "minLength": 1 },
+        "domain": { "type": ["string", "null"], "description": "Sender domain (non-PII-body metadata)." },
+        "category": { "type": ["string", "null"], "description": "Promotional classification (e.g. 'retail', 'travel', 'food_delivery')." },
+        "email_sourced": { "type": "boolean", "default": true, "description": "true when this sender data's sole/primary source is the email connection; drives the 7-day revocation deletion cascade (FR-X-013)." }
+      }
+    },
+    "action": {
+      "type": "string",
+      "enum": ["unsubscribe", "roll_up", "keep"],
+      "description": "User decision: unsubscribe (attempt removal), roll_up (consolidate into digest), or keep (no change)."
+    },
+    "impulse_rank": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["score", "rank"],
+      "description": "Impulse-spend-trigger ranking driving sort order (impulse-first, FR-INB-001). Derived from TransactionStream/MerchantGraph spend signals where available; falls back to a curated heuristic and marks the picture incomplete when absent.",
+      "properties": {
+        "score": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Decimal-string impulse-spend score (0..1). String-encoded to defeat JSON float coercion (platform wire convention)." },
+        "rank": { "type": "integer", "minimum": 1, "description": "1 = highest impulse-spend trigger, shown first." },
+        "signal_source": { "type": "string", "enum": ["transaction_spend", "curated_heuristic"], "description": "curated_heuristic ⇒ the ranking picture is incomplete (Partial state)." }
+      }
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "Bilingual 'why this sender is ranked first' (Constitution VI, FR-X-006). Required so the impulse-first ordering is explainable (SC-I-006)."
+    },
+    "execution_state": {
+      "type": "string",
+      "enum": ["proposed", "user_confirmed", "executing", "completed", "failed", "cancelled"],
+      "description": "Lifecycle. NEVER advances past 'proposed' without explicit user confirmation via a Confirm-Action sheet (recommend-never-execute, Clarifications Q6). 'failed' is retried idempotently with backoff (FR-X-012)."
+    },
+    "confirmed_at": { "type": ["string", "null"], "format": "date-time", "description": "UTC instant the user confirmed (audited, FR-X-007)." },
+    "audit_ref": { "type": ["string", "null"], "format": "uuid", "description": "Append-only audit event id for a confirmed/executed action (FR-INB-008)." },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the sender detection/clean-up scan (source = 'email_parser' or 'derived')." }
+  }
+}

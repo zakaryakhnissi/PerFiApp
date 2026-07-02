@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:shopping/RealizedSavings/1.0.0",
+  "title": "RealizedSavings",
+  "description": "Append-only records of ACTUAL savings realized on posted purchases, tied to a merchant and budget category. Provided by Module 6 to Tasks, Pay, and Inbox. The recorded saving is the ACTUAL posted figure (with a divergence flag if it differs from the coupon's expected value), never the optimistic expected one (SC-SH-006). All amounts integer CAD cents. Writes are idempotent on source_event_id (FR-X-003): a replayed purchase-posted event records at most once.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "savings"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; cross-member reads are authZ-checked server-side (threat model IDOR)." },
+    "savings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["saving_id", "source_event_id", "merchant_ref", "budget_category", "actual_saving", "recorded_at", "freshness"],
+        "properties": {
+          "saving_id": { "type": "string", "format": "uuid" },
+          "source_event_id": { "type": "string", "minLength": 1, "description": "Idempotency key (purchase-posted event id). UNIQUE: a replayed event does NOT double-record (Constitution IV, FR-X-003)." },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string", "minLength": 1 } }
+          },
+          "budget_category": { "type": "string", "minLength": 1, "description": "Canonical BudgetState category the saving is framed against." },
+          "coupon_recommendation_id": { "type": ["string", "null"], "format": "uuid", "description": "The CouponRecommendation whose use produced this saving, if any." },
+          "expected_saving": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "The coupon's expected CAD saving at recommendation time (for divergence comparison only)." },
+          "actual_saving": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "The ACTUAL CAD saving realized on the posted purchase (integer cents). This is the authoritative figure; expected_saving is reference only." },
+          "diverged": { "type": "boolean", "default": false, "description": "true iff actual_saving differs from expected_saving (partial apply, item out of stock, etc.). When true, the ACTUAL figure is recorded and the divergence is surfaced (SC-SH-006)." },
+          "recorded_at": { "type": "string", "format": "date-time", "description": "UTC instant the realized saving was recorded; immutable (append-only audit semantics, FR-X-007)." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the purchase-posted source (TransactionStream) the saving was derived from." }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/CashFlowForecast/1.0.0",
+  "title": "CashFlowForecast",
+  "description": "Projected balances over a horizon with the lowest point, runway days, and shortfall flags (FR-CORE-003; umbrella RunwayForecast). Provided by Module 0; consumed by Cash Safety, Bills, Pay, Goals, etc. Projections are MONEY outputs computed in integer cents from freshness-stamped balances; a stale balance input MUST flag/withhold the forecast (Constitution VIII — 'no runway calculation on a multi-day-old balance').",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "horizon_days", "starting_balance", "projected_lowest_balance", "runway_days", "shortfall_flag", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "horizon_days": { "type": "integer", "minimum": 1, "description": "Forecast horizon length in days." },
+    "starting_balance": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Net liquid starting position used as the forecast basis (integer cents). REQUIRED: every reported runway figure must carry the basis that produced it (Constitution VI — a money figure carries its inputs)." },
+    "projected_lowest_balance": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Lowest projected balance over the horizon, integer cents." },
+    "projected_lowest_on": { "type": ["string", "null"], "format": "date", "description": "Date the lowest point is projected to occur." },
+    "runway_days": { "type": "integer", "minimum": 0, "description": "Days until projected balance crosses the safety buffer (0 = at/under buffer now). User-adjustable runway buffer is applied before this is computed." },
+    "shortfall_flag": { "type": "boolean", "description": "true if a projected balance breaches the safety buffer within the horizon (drives overdraft-risk / SafeToActSignal precedence in Cash Safety)." },
+    "method": { "type": "string", "enum": ["recurring_plus_trend", "recurring_only", "insufficient_history"], "default": "recurring_plus_trend", "description": "Forecast method actually used; insufficient_history ⇒ consumers treat the forecast as low-confidence and may withhold." },
+    "points": {
+      "type": "array",
+      "description": "Optional per-day projection series for charting.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "projected_balance"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "projected_balance": { "$ref": "finos:common/MoneyCents/1.0.0" }
+        }
+      }
+    },
+    "data_completeness": { "type": "string", "enum": ["complete", "partial"], "description": "partial when computed on a partial account picture." },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

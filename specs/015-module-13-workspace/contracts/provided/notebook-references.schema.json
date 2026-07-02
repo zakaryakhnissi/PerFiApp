@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:workspace/NotebookReferences/1.0.0",
+  "title": "NotebookReferences",
+  "description": "The set of LIVE, auto-refreshing references a user's notebook embeds to FinOS figures (FR-WS-002). Provided by Module 13 (Workspace) to Focus (Module 9) and any module wanting to know which figures the user is actively watching. A reference holds a render-only last-known value + FreshnessStamp; it is NOT a copy of the figure and Workspace performs no money arithmetic on it. A reference whose underlying money value is stale renders flagged/withheld; one whose target is deleted/revoked/version-skewed resolves to 'unavailable' — never a stale cached number as if current, never a silent blank (Constitution VIII, SC-W-010).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "references", "freshness"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile; scoped server-side from the session identity, never a client-supplied id."
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/NotebookReference" }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of this published projection; each reference also carries its own per-figure freshness."
+    }
+  },
+  "$defs": {
+    "NotebookReference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["reference_id", "page_id", "target_contract", "value_path", "resolution_state", "freshness"],
+      "properties": {
+        "reference_id": { "type": "string", "format": "uuid" },
+        "page_id": { "type": "string", "format": "uuid", "description": "Notebook page the reference is embedded in." },
+        "target_contract": {
+          "type": "string",
+          "description": "The upstream contract $id the figure resolves from (e.g. 'finos:cashsafety/RunwayForecast/1.0.0', 'finos:spine/GoalState/1.0.0').",
+          "pattern": "^finos:[a-z0-9-]+/[A-Za-z0-9]+/[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "value_path": { "type": "string", "minLength": 1, "description": "JSON path of the referenced figure within the upstream object." },
+        "label_en": { "type": "string", "minLength": 1, "description": "Inline label EN (e.g. 'current runway'); bilingual — single-language is a defect." },
+        "label_fr": { "type": "string", "minLength": 1, "description": "Inline label FR (e.g. 'autonomie actuelle')." },
+        "resolution_state": {
+          "type": "string",
+          "enum": ["live", "stale", "withheld", "unavailable"],
+          "description": "withheld = stale MONEY figure (Constitution VIII); unavailable = target deleted/revoked/version-skewed (SC-W-010). Never 'live' for a stale money figure."
+        },
+        "cached_amount_cents": {
+          "type": ["integer", "null"],
+          "description": "Last-known amount in integer minor units, typed exactly as upstream; render-only, never re-rounded/summed here. null for non-money or unavailable references."
+        },
+        "cached_rate": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+(\\.[0-9]+)?$",
+          "description": "Last-known rate/fraction as a decimal string; render-only. null when not a rate."
+        },
+        "goal_ref": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": { "goal_id": { "type": "string", "format": "uuid" } },
+          "description": "Optional GoalState link for time-to-goal context (FR-X-004)."
+        },
+        "freshness": {
+          "$ref": "finos:common/FreshnessStamp/1.0.0",
+          "description": "Inherited from the owning contract; stale money ⇒ resolution_state withheld."
+        }
+      }
+    }
+  }
+}

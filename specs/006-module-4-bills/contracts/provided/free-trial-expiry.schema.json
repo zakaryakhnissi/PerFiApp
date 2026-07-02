@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:bills/FreeTrialExpiry/1.0.0",
+  "title": "FreeTrialExpiry",
+  "description": "Free trials tracked as first-class objects with a countdown to auto-conversion and a one-tap keep/cancel decision surfaced BEFORE conversion (FR-BILL-002). Provided by Module 4 to Inbox (digest alerts), Cash Safety, and Tasks. Keep/cancel is GUIDED, never executed by FinOS (Constitution IV / FR-X-003). Post-conversion cost is integer minor units (cents). Unknown conversion dates are marked estimated, never presented as confident. Each trial carries a FreshnessStamp.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "trials", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "trials": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trial_id", "merchant_ref", "converts_on", "converts_on_is_estimated", "post_conversion_cost", "alert_window_days", "decision_state", "freshness"],
+        "properties": {
+          "trial_id": { "type": "string", "format": "uuid" },
+          "series_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["series_id"],
+            "properties": { "series_id": { "type": "string", "format": "uuid", "description": "Linked RecurringSeries once the trial converts (optional pre-conversion)." } }
+          },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string" } }
+          },
+          "display_name_en": { "type": ["string", "null"] },
+          "display_name_fr": { "type": ["string", "null"], "description": "Localized trial label; one-language-only is a bilingual defect (Constitution II)." },
+          "converts_on": { "type": "string", "format": "date", "description": "Predicted auto-conversion (first paid charge) date." },
+          "converts_on_is_estimated": {
+            "type": "boolean",
+            "description": "true when the exact conversion date is unknown; the date is an estimate and MUST be surfaced as such (never a confident date)."
+          },
+          "post_conversion_cost": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "CAD cost (integer cents) that applies on conversion if the trial is kept (FX-converted upstream for foreign merchants)."
+          },
+          "alert_window_days": {
+            "type": "integer",
+            "minimum": 0,
+            "default": 3,
+            "description": "Days before converts_on at which the keep/cancel prompt is surfaced (FR-BILL-002; default 3, user-adjustable, spec C-4)."
+          },
+          "decision_state": {
+            "type": "string",
+            "enum": ["pending", "keep", "cancel"],
+            "default": "pending",
+            "description": "User's keep/cancel decision. cancel routes the GUIDED cancellation action (FinOS does not cancel on the user's behalf). The decision write is idempotent on source_event_id and audited."
+          },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

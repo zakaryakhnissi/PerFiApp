@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:travel/TripBudget/1.0.0",
+  "title": "TripBudget",
+  "description": "A trip's budget envelope with FX-aware CAD costs and an insurance-coverage status, derived from a parsed itinerary and linked to the spine travel budget category (FR-TRV-001). Provided by Module 11 (Travel) to Rewards (status), Bills (trip bills), and Workspace. MONEY: every *_cents field is integer minor units (CAD); fx_rate is an arbitrary-precision decimal string (never float). Foreign costs are converted to CAD in arbitrary precision and rounded half-up at the final cent before storage/display. A TripBudget whose underlying FX rate is stale MUST be flagged via freshness; a stale FX MONEY input MUST NOT be presented as a fresh CAD figure (Constitution IV/VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["trip_id", "profile_id", "name", "budget_category", "estimated_total_cad_cents", "currency_breakdown", "insurance_status", "data_completeness", "freshness"],
+  "properties": {
+    "trip_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; every cross-profile read is authZ-checked server-side (threat model)." },
+    "name": { "type": "string", "minLength": 1, "description": "User/derived trip name (displayed verbatim; not translated)." },
+    "destination": { "type": ["string", "null"], "description": "Primary destination label, optional." },
+    "start_date": { "type": ["string", "null"], "format": "date" },
+    "end_date": { "type": ["string", "null"], "format": "date" },
+    "budget_category": { "type": "string", "minLength": 1, "description": "Canonical spine BudgetState category this trip is linked to (typically 'travel'); ties trip costs to budget headroom (FR-TRV-001)." },
+    "estimated_total_cad_cents": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Sum of all itinerary-item CAD costs, integer cents. Each foreign cost converted via a timestamped FX rate in arbitrary precision, half-up at the final cent (FR-TRV-001)."
+    },
+    "budgeted_cad_cents": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Amount allocated to this trip from the spine travel budget, integer cents. Optional when the user has not set a per-trip allocation."
+    },
+    "headroom_cad_cents": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "budgeted - estimated_total for this trip, integer cents. Negative = projected over travel budget. Withheld when BudgetState is stale/missing (money input)."
+    },
+    "currency_breakdown": {
+      "type": "array",
+      "description": "Per-source-currency totals so a consumer can see the FX exposure behind the CAD figure.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["currency", "foreign_amount_cents", "cad_amount_cents", "fx_rate", "fx_freshness"],
+        "properties": {
+          "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "description": "ISO-4217 source currency of the underlying bookings." },
+          "foreign_amount_cents": { "type": "integer", "minimum": 0, "description": "Integer minor units of the FOREIGN currency before conversion." },
+          "cad_amount_cents": { "type": "integer", "minimum": 0, "description": "Converted CAD integer cents = round_half_up(foreign × fx_rate)." },
+          "fx_rate": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Foreign→CAD rate, arbitrary-precision decimal STRING (never float). Applied in arbitrary precision, rounded once (FR-TRV-001 / FR-X-002)." },
+          "fx_freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the FX rate used; stale ⇒ the converted figure is flagged (umbrella multi-currency edge case)." }
+        }
+      }
+    },
+    "insurance_status": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["state"],
+      "description": "Insurance-gap assessment against card perks from Rewards CardLineup (FR-TRV-002). 'gap' surfaces a flag with the relevant card perk; 'unknown' is used when coverage cannot be determined — never assumed covered.",
+      "properties": {
+        "state": { "type": "string", "enum": ["covered", "gap", "unknown"], "description": "Default for an unassessed trip is 'unknown' — never 'covered' by assumption." },
+        "covering_card_id": { "type": ["string", "null"], "format": "uuid", "description": "Rewards card_id whose perk provides coverage, when state = covered." },
+        "gap_types": {
+          "type": "array",
+          "items": { "type": "string", "enum": ["trip_cancellation", "medical", "baggage", "rental_collision", "flight_delay"] },
+          "description": "Coverage types still missing, when state = gap."
+        }
+      }
+    },
+    "data_completeness": { "type": "string", "enum": ["complete", "partial"], "description": "partial when the itinerary or BudgetState was computed on a partial picture; consumers MUST mark dependent views incomplete (Partial state)." },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the inputs this TripBudget was derived from (FX rates, BudgetState, parsed confirmations). Stale FX/budget money inputs ⇒ consumers flag/withhold the CAD figures."
+    }
+  }
+}

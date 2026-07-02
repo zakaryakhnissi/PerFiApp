@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:bills/RecurringObligations/1.0.0",
+  "title": "RecurringObligations",
+  "description": "The forward-looking schedule of committed recurring outflows (amount + expected date per upcoming occurrence) over a horizon — the money-facing view Pay's sequencer and Cash Safety's runway consume (umbrella Provides list; FR-BILL-001/003). Provided by Module 4 to Cash Safety, Pay, Tasks, Shopping, and Inbox. Amounts are integer minor units (cents), already FX-converted upstream. Each occurrence carries a FreshnessStamp; estimated occurrences (variable amount or irregular cadence) are explicitly flagged so consumers never treat an estimate as a settled obligation.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "horizon_days", "obligations", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "horizon_days": { "type": "integer", "minimum": 1, "description": "Forward horizon over which obligations are projected." },
+    "data_completeness": {
+      "type": "string",
+      "enum": ["complete", "partial"],
+      "description": "partial when computed on a partial account picture."
+    },
+    "obligations": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["obligation_id", "series_ref", "expected_on", "amount", "is_estimated", "freshness"],
+        "properties": {
+          "obligation_id": { "type": "string", "format": "uuid", "description": "Stable id for this projected occurrence; idempotent across re-projection." },
+          "series_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["series_id"],
+            "properties": { "series_id": { "type": "string", "format": "uuid" } }
+          },
+          "expected_on": { "type": "string", "format": "date", "description": "Expected charge date for this occurrence (UTC date)." },
+          "amount": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "Expected outflow amount, integer CAD cents (FX-converted upstream)."
+          },
+          "necessity": {
+            "type": "string",
+            "enum": ["essential", "negotiable", "nice_to_have"],
+            "description": "Necessity classification carried through from the series, so Pay's sequencer can prioritize essentials."
+          },
+          "is_estimated": {
+            "type": "boolean",
+            "description": "true when amount and/or date are estimated (variable-amount bill or irregular cadence). Consumers MUST NOT treat an estimated obligation as a settled money input."
+          },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

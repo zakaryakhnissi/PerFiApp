@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:credit/CreditCoachingPlan/1.0.0",
+  "title": "CreditCoachingPlan",
+  "description": "Due-date & utilization coaching this module OWNS and PROVIDES (FR-CRD-002): a recommend-only plan that advises a SPECIFIC early-payment amount (integer cents) and optional spend re-routing to bring per-card or aggregate utilization into the healthy band (< 30%, or the optimal band < 10% when the user's goal is credit-boosting) BEFORE a statement date. Recommend-only — FinOS never moves money; each action is surfaced for explicit per-action user execution (Constitution IV, FR-X-003). Every plan carries Reasoning (inputs + bilingual rationale) and a FreshnessStamp. Money inputs (balances, limits, recommended payment) are integer cents; utilization figures are decimal-string fractions read from finos:spine/CreditState/1.0.0. When a primary MONEY input (balance, credit limit) or the CreditState utilization is STALE the plan is WITHHELD (status='withheld'); the documented-default exception does NOT apply (utilization here is the OUTPUT being acted on, and the payment amount is a money figure). Consumers: Credit UI, Cash Safety, Pay, Bills, Household.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "profile_id", "status", "reasoning", "freshness"],
+  "properties": {
+    "plan_id": { "type": "string", "format": "uuid" },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ enforced server-side against the validated session identity — never a client-supplied profile_id (threat model IDOR)."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["active", "withheld", "satisfied"],
+      "description": "active = an actionable plan is available; withheld = a primary money input or CreditState utilization was stale/missing, so no figure is asserted (ask the user to refresh); satisfied = utilization already in the target band, no action needed."
+    },
+    "withheld_reason": {
+      "type": ["string", "null"],
+      "enum": ["stale_balance", "missing_balance", "stale_credit_state", "missing_credit_state", "stale_cashflow", "conflicting_safe_to_act", null],
+      "description": "Populated only when status='withheld'. Names the missing/stale primary input so the UI can show the Withheld Card with a targeted CTA (e.g. 'Refresh balance'). NEVER guess a money input."
+    },
+    "target_band": {
+      "type": "string",
+      "enum": ["healthy", "optimal"],
+      "default": "healthy",
+      "description": "healthy (< 30%) is the default coaching target; optimal (< 10%) is targeted only when the user's stated goal is credit-boosting (FR-CRD-002)."
+    },
+    "actions": {
+      "type": "array",
+      "description": "Ordered recommend-only actions. Empty when status='withheld' or 'satisfied'.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_type", "account_id", "label_en", "label_fr"],
+        "properties": {
+          "action_type": {
+            "type": "string",
+            "enum": ["pay_early", "reroute_spend", "request_limit_increase_consideration"],
+            "description": "pay_early = pay a specific amount before the statement date; reroute_spend = move planned spend to another card to avoid pushing utilization up; request_limit_increase_consideration = informational note that a higher limit would lower utilization (never an application). All recommend-only."
+          },
+          "account_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "The spine account_id (from AccountState) this action targets."
+          },
+          "recommended_payment": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "For action_type='pay_early': the SPECIFIC amount (integer cents) that brings this card below the target band, computed in arbitrary precision and rounded half-up once at the cent. Absent for non-payment actions. This is a MONEY figure — never emitted on a stale/withheld input."
+          },
+          "utilization_before": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "description": "Per-card utilization before the action, decimal-string fraction from CreditState (normally [0,1]; may exceed 1.0 only for genuinely over-limit cards)."
+          },
+          "utilization_after": {
+            "type": "string",
+            "pattern": "^[0-9]+(\\.[0-9]+)?$",
+            "description": "Projected per-card utilization after the action, decimal-string fraction. For pay_early this is below the target band."
+          },
+          "statement_due_on": {
+            "type": ["string", "null"],
+            "format": "date",
+            "description": "The statement date this action must precede to affect the reported utilization."
+          },
+          "time_to_goal_contribution": {
+            "type": ["string", "null"],
+            "description": "Optional bilingual-rendered (at the edge) time-to-goal context per FR-X-004, e.g. days saved toward a credit-boosting goal; null when no goal is associated."
+          },
+          "label_en": { "type": "string", "minLength": 1, "description": "Plain-language action title, English (en-CA)." },
+          "label_fr": { "type": "string", "minLength": 1, "description": "Plain-language action title, French (fr-CA). Missing fr label is a bilingual defect (Constitution II)." }
+        }
+      }
+    },
+    "safe_to_act_deferred": {
+      "type": "boolean",
+      "default": false,
+      "description": "true iff Cash Safety's SafeToActSignal indicated an early-payment would create an overdraft risk; Cash Safety takes precedence and the conflict + resolution are surfaced (umbrella cross-module edge case; precedence per ux-foundations §3.1/§10.4)."
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "Inputs (balances, limits, utilization_before/after, statement date) + bilingual rationale that produced the plan (Constitution VI, FR-X-006). Recorded in full only in the append-only audit trail; redacted from debug logs."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the most-stale input the plan was computed from (oldest input governs). Stale ⇒ status='withheld' (Constitution VIII)."
+    }
+  }
+}

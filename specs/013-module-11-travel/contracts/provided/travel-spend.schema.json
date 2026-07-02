@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:travel/TravelSpend/1.0.0",
+  "title": "TravelSpend",
+  "description": "Lifetime and per-trip travel-spend statistics with cost-per-trip and cost-per-day, plus optional carbon estimates (FR-TRV-002). Provided by Module 11 (Travel) to Rewards (status), Bills (trip bills), and Workspace. MONEY: all *_cents fields are integer minor units (CAD); foreign-sourced spend is FX-converted to CAD (arbitrary precision, half-up at the final cent) before aggregation. Carbon estimates are NOT money and carry a coarse confidence flag rather than implying precision.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "lifetime_spend_cad_cents", "trip_count", "trips", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; cross-profile reads authZ-checked server-side." },
+    "lifetime_spend_cad_cents": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Sum of all trips' CAD spend, integer cents. Computed by summing already-rounded per-trip CAD cents (associative, exact)."
+    },
+    "trip_count": { "type": "integer", "minimum": 0 },
+    "avg_cost_per_trip_cad_cents": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "lifetime_spend / trip_count, integer cents, half-up at the final cent. Omitted/0 when trip_count = 0 (consumers show Empty state, never $0.00)."
+    },
+    "trips": {
+      "type": "array",
+      "description": "Per-trip stat rows.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["trip_id", "spend_cad_cents", "cost_source"],
+        "properties": {
+          "trip_id": { "type": "string", "format": "uuid" },
+          "spend_cad_cents": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Total CAD spend for this trip, integer cents." },
+          "duration_days": { "type": ["integer", "null"], "minimum": 0, "description": "Trip length in days; null when dates are unknown." },
+          "cost_per_day_cad_cents": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "spend / duration_days, integer cents, half-up at the final cent. Null/omitted when duration_days is null or 0 — never divide by an unknown duration."
+          },
+          "cost_source": {
+            "type": "string",
+            "enum": ["itinerary", "matched_transactions", "blended"],
+            "description": "Provenance of the spend figure: parsed itinerary costs, spine TransactionStream matches, or a blend. Drives confidence shown to the user."
+          },
+          "carbon": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "description": "Optional carbon estimate (FR-TRV-002). NOT money; an estimate with an explicit coarse-confidence flag — never presented as exact.",
+            "properties": {
+              "kg_co2e": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Estimated kg CO2e, decimal string. Estimate only." },
+              "confidence": { "type": "string", "enum": ["low", "medium"], "description": "Coarse confidence; carbon is never presented as precise." },
+              "method": { "type": "string", "minLength": 1, "description": "Estimation method/source identifier (e.g. 'distance_class_factor_v1')." }
+            }
+          }
+        }
+      }
+    },
+    "data_completeness": { "type": "string", "enum": ["complete", "partial"], "description": "partial when computed on a partial transaction/itinerary picture; consumers mark stats incomplete." },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the FX rates and transaction matches the spend figures were derived from. Stale FX (money input) ⇒ consumers flag the affected CAD figures."
+    }
+  }
+}

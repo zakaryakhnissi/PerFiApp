@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:habits/HabitProgress/1.0.0",
+  "title": "HabitProgress",
+  "description": "A profile's aggregate game-layer state — XP, level, per-habit streaks, badges, and the game-layer-enabled flag. Provided by Module 8 (Habits) to Social and Inbox. CROSS-USER-SAFE PROJECTION: contains NO monetary value, account name, merchant, or source reference (FR-SOC-001); XP is derived from integer event/streak counts and is NEVER a function of any money amount. The game layer is opt-in and fully disable-able (FR-HAB-001): when game_layer_enabled is false, consumers MUST render no game UI and the figures below are inert.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "game_layer_enabled", "xp", "level", "streaks", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "game_layer_enabled": {
+      "type": "boolean",
+      "description": "Per-profile opt-in. False ⇒ no game UI; all real financial micro-actions (incl. the daily ritual) still function (FR-HAB-001)."
+    },
+    "xp": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Experience points. Derived server-side from qualifying real-action events and streak length — NEVER from a monetary amount, NEVER client-asserted."
+    },
+    "level": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Level derived from XP thresholds."
+    },
+    "streaks": {
+      "type": "array",
+      "description": "Per-active-habit streak projections.",
+      "items": { "$ref": "finos:habits/StreakState/1.0.0" }
+    },
+    "badges": {
+      "type": "array",
+      "description": "Earned badges. No monetary value.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["badge_id", "name_en", "name_fr", "earned_on"],
+        "properties": {
+          "badge_id": { "type": "string", "format": "uuid" },
+          "name_en": { "type": "string", "minLength": 1, "description": "Badge name, en-CA." },
+          "name_fr": { "type": "string", "minLength": 1, "description": "Badge name, fr-CA. A missing fr name is a bilingual defect (Constitution II)." },
+          "earned_on": { "type": "string", "format": "date" }
+        }
+      }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Aggregate freshness; depends on freshness-stamped consumed completion events."
+    }
+  }
+}

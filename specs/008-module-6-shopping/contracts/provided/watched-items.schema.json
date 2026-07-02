@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:shopping/WatchedItems/1.0.0",
+  "title": "WatchedItems",
+  "description": "A user's watched products with an observed-price baseline, current tracked price, drop threshold, and optional budget/goal linkage. Provided by Module 6 (Shopping) to Tasks, Pay, and Inbox. Prices are integer CAD cents; tracked prices carry a FreshnessStamp (stale ⇒ NOT treated as a live drop, Constitution VIII). Email-inferred items are provenance-tracked so the FR-X-013 email-revocation purge can target them. Recommend-only: a watch never triggers a purchase.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "items"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; every cross-member read is authZ-checked server-side against the requester's session identity (threat model IDOR)." },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["watch_id", "merchant_ref", "current_price", "baseline_price", "freshness"],
+        "properties": {
+          "watch_id": { "type": "string", "format": "uuid" },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string", "minLength": 1, "description": "Resolved MerchantGraph node id (finos:spine/MerchantGraph/1.0.0)." } }
+          },
+          "product_label_en": { "type": ["string", "null"], "description": "Localized product label; a label present in only one language is a bilingual defect (Constitution II)." },
+          "product_label_fr": { "type": ["string", "null"] },
+          "current_price": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Latest tracked price in integer CAD cents (foreign prices FX-converted, half-up at the final cent, before storage)." },
+          "baseline_price": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Observed-history baseline (rolling median/trough over the tracked window) used for drop detection; NOT a single feed snapshot (defeats fake-anchor discounts, Clarification Q2)." },
+          "drop_threshold_cents": { "type": ["integer", "null"], "description": "User target price in cents below which a drop alert fires; null ⇒ a default percentage below baseline is used." },
+          "iso_currency": { "type": "string", "pattern": "^[A-Z]{3}$", "default": "CAD", "description": "Original listing currency; non-CAD prices are FX-converted to CAD before display." },
+          "fx_rate": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Decimal-string FX rate used when iso_currency != CAD; null for CAD. Stale FX flags the converted figure (Constitution VIII)." },
+          "linked_budget_category": { "type": ["string", "null"], "description": "Canonical BudgetState category key this item is framed against; bilingual label resolved at the edge." },
+          "linked_goal_id": { "type": ["string", "null"], "format": "uuid", "description": "Optional GoalState goal_id for time-to-goal framing; null ⇒ time-to-goal line omitted (never shown as 'no goal')." },
+          "source": { "type": "string", "enum": ["price_feed", "user", "email_inferred"], "default": "user", "description": "Provenance. email_inferred entries are subject to the FR-X-013 email-revocation purge." },
+          "email_sourced": { "type": "boolean", "default": false, "description": "true iff this entry's SOLE source was a connected email; purged within 7 days of email-access revocation regardless of store (FR-X-013)." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of current_price. Stale ⇒ price shown with a Stale chip and NOT alerted on as a live drop." }
+        }
+      }
+    }
+  }
+}

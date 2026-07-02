@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:cashsafety/SafeToActSignal/1.0.0",
+  "title": "SafeToActSignal",
+  "description": "Cash Safety's authoritative safety verdict for a contemplated spend. Consumed by EVERY module that proposes spending (Pay, Bills, Shopping, Tasks, Rewards) per umbrella Provides list and FR-CASH-004. This signal has DOCUMENTED PRECEDENCE: when it flags risk it overrides any optimization recommendation (umbrella 'Conflicting recommendations' edge case; ux-foundations Conflict Banner resolution rule). It is a SAFETY GUARDRAIL derived from the runway, which is itself a MONEY output: when the underlying balance/forecast is stale or missing, verdict MUST be 'withheld' (never a guessed 'safe'). Recommend-only: this signal never moves money (Constitution IV).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["signal_id", "profile_id", "verdict", "reasoning", "freshness"],
+  "properties": {
+    "signal_id": { "type": "string", "format": "uuid" },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ is enforced server-side against the validated session identity — never a client-supplied profile_id (FR-X-010/FR-HH-001; threat model IDOR). Household visibility further gated by MemberScope."
+    },
+    "verdict": {
+      "type": "string",
+      "enum": ["safe", "caution", "unsafe", "withheld"],
+      "description": "safe = spend does not breach the runway safety buffer; caution = spend narrows runway into the buffer-approach band (proceed with awareness); unsafe = spend would breach the buffer / cause a predicted shortfall (overdraft risk) — consumers MUST NOT surface a spend-positive optimization without showing the Conflict Banner and deferring to this signal; withheld = a MONEY input (balance/forecast) is stale or missing and a verdict cannot be computed — consumers withhold the dependent spend recommendation and ask the user to refresh (NEVER treat withheld as safe)."
+    },
+    "contemplated_amount": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Optional amount the verdict was evaluated against, integer cents. Omitted for a general 'is it safe to spend right now' query, in which case the verdict reflects current runway headroom only."
+    },
+    "projected_lowest_balance_after": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Lowest projected balance over the horizon AFTER the contemplated amount, integer cents (Constitution VI — a verdict carries the figure that produced it). Present only when contemplated_amount is present and the verdict is not 'withheld'."
+    },
+    "runway_days_after": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "Runway days remaining after the contemplated amount; null when withheld or not evaluated against an amount."
+    },
+    "shortfall_date": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Date a shortfall is projected if the user proceeds; null when verdict is safe/withheld."
+    },
+    "runway_ref": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "RunwayForecast.forecast_id this verdict was derived from, so consumers can open the full runway picture (links the Conflict Banner's 'View Cash Safety details')."
+    },
+    "precedence_rank": {
+      "type": "integer",
+      "const": 1,
+      "description": "Conflict-resolution precedence (ux-foundations §10.4): Cash Safety SafeToActSignal is rank 1 — always overrides lower-ranked optimization signals. Encoded so consumers resolve conflicts deterministically without hard-coding the rule."
+    },
+    "reasoning": { "$ref": "finos:common/Reasoning/1.0.0" },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Inherits the freshness of the underlying balance/CashFlowForecast. is_stale=true on a money input ⇒ verdict MUST be 'withheld'."
+    }
+  }
+}

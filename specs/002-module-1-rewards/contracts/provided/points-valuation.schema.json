@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:rewards/PointsValuation/1.0.0",
+  "title": "PointsValuation",
+  "description": "A loyalty balance valued in CAD. Provided by Module 1 (Rewards). Money: cad_value_cents is integer minor units; redemption_rate is decimal string (never float).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["program", "profile_id", "points", "valuation_source", "base_rate", "effective_rate", "cad_value_cents", "freshness"],
+  "properties": {
+    "program": { "type": "string", "minLength": 1 },
+    "profile_id": { "type": "string", "format": "uuid" },
+    "points": { "type": "integer", "minimum": 0 },
+    "valuation_source": {
+      "type": "string",
+      "enum": ["aggregated", "manual", "user_override"],
+      "description": "FR-REW-010: aggregated from spine, manually entered, or user-override custom rate. User-sourced provenance tag: `manual` and `user_override` are self-reported and server-side validated against sanity bounds; downstream consumers (Travel/Pay) MUST treat them as self-reported (discount/confirm) rather than authoritative."
+    },
+    "base_rate": {
+      "type": "string",
+      "description": "Direct cents-per-point, arbitrary-precision decimal as a string.",
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+    },
+    "effective_rate": {
+      "type": "string",
+      "description": "Transfer-aware best rate (>= base_rate); base_rate × best transfer_ratio × live bonus_multiplier, arbitrary precision (FR-REW-007).",
+      "pattern": "^[0-9]+(\\.[0-9]+)?$"
+    },
+    "cad_value_cents": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "round_half_up(points × effective_rate) to CAD cents, computed in arbitrary precision."
+    },
+    "expiry": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "policy": { "type": "string", "enum": ["known", "unknown", "non_expiring"] },
+        "expires_on": { "type": ["string", "null"], "format": "date" },
+        "at_risk_cad_cents": { "type": "integer", "minimum": 0 }
+      },
+      "description": "FR-REW-009. Default policy is 'unknown' — never assume non-expiring."
+    },
+    "time_to_goal_contribution": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "goal_id": { "type": "string", "format": "uuid" },
+        "contribution_cents": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

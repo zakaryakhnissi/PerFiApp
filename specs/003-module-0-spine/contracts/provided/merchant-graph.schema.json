@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/MerchantGraph/1.0.0",
+  "title": "MerchantGraph",
+  "description": "Canonical merchant identities tying together rewards, subscriptions, tax tagging, and shopping (FR-CORE-002, umbrella Key Entities). Provided by Module 0 to all modules. The graph is SHARED, profile-agnostic reference data EXCEPT for email-sourced / user-sourced enrichment, which is profile-scoped: an email_inferred or user node carries owner_profile_id so the FR-X-013 email-revocation purge can target exactly that profile's enrichment (T053/T057). Curated/provider/model reference nodes are owner_profile_id = null and are not profile-scoped.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["merchants"],
+  "properties": {
+    "merchants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["merchant_id", "canonical_name", "freshness"],
+        "properties": {
+          "merchant_id": { "type": "string", "minLength": 1, "description": "Stable canonical merchant node id." },
+          "canonical_name": { "type": "string", "minLength": 1 },
+          "display_name_en": { "type": ["string", "null"] },
+          "display_name_fr": { "type": ["string", "null"], "description": "Localized display name; a node surfaced to users with only one language is a bilingual defect (Constitution II)." },
+          "category": { "type": ["string", "null"], "description": "Primary canonical category for this merchant." },
+          "aliases": { "type": "array", "items": { "type": "string" }, "description": "Raw descriptors normalized onto this node (dedup/normalization inputs)." },
+          "parent_merchant_id": { "type": ["string", "null"], "description": "For brand→subsidiary relationships in the graph." },
+          "is_subscription_like": { "type": "boolean", "default": false, "description": "Recurring-merchant hint for Bills/Subscriptions consumers." },
+          "source": { "type": "string", "enum": ["curated", "provider", "model", "email_inferred", "user"], "default": "curated", "description": "Provenance. email_inferred nodes/enrichments are subject to the FR-X-013 deletion cascade on email revocation." },
+          "email_sourced": { "type": "boolean", "default": false, "description": "true if this node or its enrichment was derived SOLELY from an email source; such data is purged within the 7-day window on email-access revocation regardless of which store holds it (FR-X-013). When true, owner_profile_id MUST be set so the purge can target the owning profile." },
+          "owner_profile_id": { "type": ["string", "null"], "format": "uuid", "description": "Owning profile for PROFILE-SCOPED enrichment (email_inferred / user nodes). null for shared curated/provider/model reference nodes. The email-revocation purge cascade (FR-X-013, T053/T057) keys on this to remove exactly the revoking profile's email-sourced enrichment without touching shared reference data; profile-scoped nodes are authZ-checked on cross-user reads (threat model IDOR)." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    }
+  }
+}

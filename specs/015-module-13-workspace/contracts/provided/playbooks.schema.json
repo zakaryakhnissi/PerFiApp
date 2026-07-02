@@ -1,0 +1,138 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:workspace/Playbooks/1.0.0",
+  "title": "Playbooks",
+  "description": "A user's running life-event playbook instances with steps wired to LIVE FinOS figures (read by reference, never computed here) and the provenance of any tasks/goals generated from steps. Provided by Module 13 (Workspace) to Tasks (Module 7), Goals (Spine), and Focus (Module 9). Recommend-only: Workspace never moves money and never writes a goal balance — generated items are PROPOSALS materialized downstream. Money: any cached figure is integer minor units (cents) typed exactly as its upstream contract; Workspace performs no monetary arithmetic. Every externally-sourced figure carries a FreshnessStamp (Constitution VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "instances", "freshness"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile; scoped server-side from the session identity, never a client-supplied id (platform-decisions §5)."
+    },
+    "instances": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/PlaybookInstance" }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of this published projection; individual live step figures carry their own per-figure freshness."
+    }
+  },
+  "$defs": {
+    "PlaybookInstance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["instance_id", "template_id", "template_version", "event_kind", "title_en", "title_fr", "status", "started_at", "steps"],
+      "properties": {
+        "instance_id": { "type": "string", "format": "uuid" },
+        "template_id": { "type": "string", "minLength": 1, "description": "Curated, versioned playbook template this instance was created from." },
+        "template_version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$", "description": "Semver of the template dataset; a step-schema change is caught by contract tests (FR-X-011)." },
+        "event_kind": { "type": "string", "enum": ["moving", "job_change", "new_baby", "immigration_newcomer"], "description": "Canada-specific life event (FR-WS-001). Extensible by adding curated templates without code change." },
+        "title_en": { "type": "string", "minLength": 1 },
+        "title_fr": { "type": "string", "minLength": 1, "description": "Bilingual — single-language chrome is a defect (Constitution II)." },
+        "status": { "type": "string", "enum": ["in_progress", "completed", "abandoned"] },
+        "progress_completed_steps": { "type": "integer", "minimum": 0 },
+        "progress_total_steps": { "type": "integer", "minimum": 0 },
+        "started_at": { "type": "string", "format": "date-time", "description": "UTC; rendered to the user's locale at the edge." },
+        "completed_at": { "type": ["string", "null"], "format": "date-time" },
+        "steps": { "type": "array", "items": { "$ref": "#/$defs/PlaybookStep" } }
+      }
+    },
+    "PlaybookStep": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["step_id", "title_en", "title_fr", "state"],
+      "properties": {
+        "step_id": { "type": "string", "minLength": 1, "description": "Stable step id within the template; part of the generation provenance key." },
+        "title_en": { "type": "string", "minLength": 1 },
+        "title_fr": { "type": "string", "minLength": 1 },
+        "state": {
+          "type": "string",
+          "enum": ["pending", "done", "snoozed", "overridden"],
+          "description": "overridden = held by a higher-precedence signal (e.g. SafeToActSignal conflict; ux §4.4)."
+        },
+        "snoozed_until": { "type": ["string", "null"], "format": "date", "description": "Step reappears at/after this date (US4)." },
+        "live_bindings": {
+          "type": "array",
+          "description": "LIVE figures this step references from upstream contracts. Values are cached for render only and governed by Fresh-or-Flagged; Workspace computes none of them.",
+          "items": { "$ref": "#/$defs/LiveBinding" }
+        },
+        "generated": {
+          "type": "array",
+          "description": "Tasks/goals proposed by this step, with provenance + downstream reference once materialized. Idempotent (FR-WS-001).",
+          "items": { "$ref": "#/$defs/GeneratedItem" }
+        },
+        "proposes_money_action": {
+          "type": "boolean",
+          "default": false,
+          "description": "true iff this step proposes a money action; such a step MUST carry reasoning and route confirmation through the Confirm-Action sheet (FR-X-003/006)."
+        },
+        "reasoning": {
+          "$ref": "finos:common/Reasoning/1.0.0",
+          "description": "Required when proposes_money_action=true: the referenced inputs + bilingual rationale (Constitution VI)."
+        },
+        "safe_to_act_deferred": {
+          "type": "boolean",
+          "default": false,
+          "description": "true iff Cash Safety's SafeToActSignal overrode a spend-implying step; Cash Safety always takes precedence (umbrella conflict edge case)."
+        }
+      }
+    },
+    "LiveBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target_contract", "value_path", "resolution_state", "freshness"],
+      "properties": {
+        "target_contract": {
+          "type": "string",
+          "description": "The upstream contract $id the figure is read from (e.g. 'finos:cashsafety/RunwayForecast/1.0.0').",
+          "pattern": "^finos:[a-z0-9-]+/[A-Za-z0-9]+/[0-9]+\\.[0-9]+\\.[0-9]+$"
+        },
+        "value_path": { "type": "string", "minLength": 1, "description": "JSON path of the referenced figure within the upstream object (e.g. 'runway_days', 'goals[goal_id].current_amount')." },
+        "resolution_state": {
+          "type": "string",
+          "enum": ["live", "stale", "withheld", "unavailable"],
+          "description": "withheld = stale MONEY figure withheld (Constitution VIII); unavailable = target deleted/revoked/version-skewed. Never 'live' for a stale money figure."
+        },
+        "cached_amount_cents": {
+          "type": ["integer", "null"],
+          "description": "Last-known amount in integer minor units, typed exactly as upstream; render-only, never re-rounded or summed here. null for non-money or unavailable figures."
+        },
+        "cached_rate": {
+          "type": ["string", "null"],
+          "pattern": "^[0-9]+(\\.[0-9]+)?$",
+          "description": "Last-known rate/fraction (e.g. utilization) as a decimal string; render-only. null when not a rate."
+        },
+        "goal_ref": {
+          "type": ["object", "null"],
+          "additionalProperties": false,
+          "properties": { "goal_id": { "type": "string", "format": "uuid" } },
+          "description": "Optional link to a GoalState goal for time-to-goal context (FR-X-004)."
+        },
+        "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Inherited from the owning contract; stale money ⇒ resolution_state withheld." }
+      }
+    },
+    "GeneratedItem": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["provenance_id", "generation_kind", "materialization_state"],
+      "properties": {
+        "provenance_id": {
+          "type": "string",
+          "description": "Stable idempotency key = hash of {playbook_instance_id, step_id, generation_kind}. UNIQUE — a replay never double-creates (Constitution IV)."
+        },
+        "generation_kind": { "type": "string", "enum": ["task", "goal"] },
+        "materialization_state": {
+          "type": "string",
+          "enum": ["pending", "materialized"],
+          "description": "pending until the downstream module/goal-service materializes it; the idempotency key holds across the wait."
+        },
+        "downstream_task_id": { "type": ["string", "null"], "format": "uuid", "description": "Set once Tasks (Module 7) materializes a generation_kind=task proposal." },
+        "downstream_goal_id": { "type": ["string", "null"], "format": "uuid", "description": "Set once the Spine goal service materializes a generation_kind=goal proposal. Workspace never writes the goal's money balance." }
+      }
+    }
+  }
+}
