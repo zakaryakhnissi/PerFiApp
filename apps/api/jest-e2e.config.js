@@ -1,6 +1,5 @@
 /** @type {import('jest').Config} */
 module.exports = {
-  preset: 'ts-jest',
   testEnvironment: 'node',
   roots: ['<rootDir>/test'],
   testRegex: '.e2e-spec.ts$',
@@ -8,6 +7,6 @@ module.exports = {
     '^@perfiapp/kb-schema$': '<rootDir>/../../packages/kb-schema/src',
   },
   transform: {
-    '^.+\\.ts$': ['ts-jest', { tsconfig: { emitDecoratorMetadata: true, experimentalDecorators: true, esModuleInterop: true, strict: true } }],
+    '^.+\\.ts$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.test.json' }],
   },
 };
