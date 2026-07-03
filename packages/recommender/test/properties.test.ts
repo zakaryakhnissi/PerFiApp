@@ -113,13 +113,16 @@ describe('contract properties', () => {
       fc.property(scenarioArb, (scenario) => {
         const { ranked } = run(scenario, scenario.cards.map((c) => c.id));
         const feeOf = (id: string) => scenario.cards.find((c) => c.id === id)!.annualFee.amountCents;
+        const strictlyBefore = (a: (typeof ranked)[number], b: (typeof ranked)[number]): boolean => {
+          if (a.expectedValue.amountCents !== b.expectedValue.amountCents) {
+            return a.expectedValue.amountCents > b.expectedValue.amountCents;
+          }
+          if (feeOf(a.cardId) !== feeOf(b.cardId)) return feeOf(a.cardId) < feeOf(b.cardId);
+          return a.cardId < b.cardId;
+        };
         for (let i = 1; i < ranked.length; i += 1) {
-          const prev = ranked[i - 1]!;
-          const curr = ranked[i]!;
-          const prevKey: [number, number, string] = [-prev.expectedValue.amountCents, feeOf(prev.cardId), prev.cardId];
-          const currKey: [number, number, string] = [-curr.expectedValue.amountCents, feeOf(curr.cardId), curr.cardId];
-          // strict lexicographic order — no unordered pairs, no duplicates
-          expect(prevKey < currKey).toBe(true);
+          // strict order — no unordered pairs, no duplicates
+          expect(strictlyBefore(ranked[i - 1]!, ranked[i]!)).toBe(true);
         }
       }),
       { numRuns: 200 },

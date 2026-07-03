@@ -1,0 +1,12 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@perfiapp/money": ["../money/src"],
+      "@perfiapp/kb-schema": ["../kb-schema/src"]
+    }
+  },
+  "include": ["src", "test"]
+}
