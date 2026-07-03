@@ -1,0 +1,65 @@
+name: Android APK
+
+# Builds an installable release APK of the PerFiApp mobile app and uploads it
+# as a workflow artifact. Runs on demand (workflow_dispatch) and on pushes to
+# the 001-card-knowledgebase feature branch. GitHub-hosted runners ship the
+# Android SDK and JDK, so no toolchain bootstrap is needed.
+#
+# Signing: the Expo template's default debug keystore — fine for sideloading
+# and internal testing, NOT for Play Store distribution.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [001-card-knowledgebase]
+    paths:
+      - "apps/mobile/**"
+      - "packages/**"
+      - "data/knowledgebase/**"
+      - ".github/workflows/android-apk.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Regenerate bundled knowledgebase
+        run: node apps/mobile/scripts/bundle-kb.js
+
+      - name: Expo prebuild (android)
+        working-directory: apps/mobile
+        run: npx expo prebuild --platform android --no-install
+
+      - name: Build release APK
+        working-directory: apps/mobile/android
+        run: ./gradlew :app:assembleRelease --no-daemon
+
+      - name: Rename APK
+        run: cp apps/mobile/android/app/build/outputs/apk/release/app-release.apk PerFiApp.apk
+
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: PerFiApp-apk
+          path: PerFiApp.apk
+          retention-days: 30
