@@ -6,7 +6,7 @@
 
 **Status**: Draft
 
-**Input**: Umbrella spec [specs/001-finos-platform/spec.md](../001-finos-platform/spec.md) → "Module 1 — Rewards & Loyalty (Priority: P1)"; functional requirements FR-REW-001..006 and cross-cutting FR-X-001..020; Constitution v2.1.0. Enhanced with a competitive benchmark of **PointsYeah Wallet (beta)** — see [competitive-analysis-pointsyeah.md](./competitive-analysis-pointsyeah.md) (source of FR-REW-007..011 and US6).
+**Input**: Umbrella spec [specs/001-finos-platform/spec.md](../001-finos-platform/spec.md) → "Module 1 — Rewards & Loyalty (Priority: P1)"; functional requirements FR-REW-001..006 and cross-cutting FR-X-001..020; Constitution v2.2.0. Enhanced with a competitive benchmark of **PointsYeah Wallet (beta)** — see [competitive-analysis-pointsyeah.md](./competitive-analysis-pointsyeah.md) (source of FR-REW-007..011 and US6).
 
 > **Scope note**: This is a per-module spec carved out of the FinOS umbrella spec. It owns the **Rewards & Loyalty** tab only. Module 0 (Financial Core & Data Spine) is a hard dependency: this module **consumes** spine contracts and does not re-implement aggregation, budgeting, or credit ingestion. Cross-cutting requirements (FR-X-*) are inherited from the umbrella and restated here only where they bind a Rewards behavior.
 >

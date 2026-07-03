@@ -64,7 +64,7 @@ description: "Task list for Module 1 — Rewards & Loyalty"
 - [ ] T016 [P] [US1] Consumer contract test for `GoalState` (time-to-goal) in `backend/tests/contract/goal-state.consumer.test.ts`
 - [X] T017 [P] [US1] Money fixture: `500000 × 1.05 cpp = 525000 cents ($5,250.00)`, no slippage, in `backend/tests/unit/money.test.ts` (FR-REW-001) — ✅ green
 - [ ] T018 [P] [US1] Manual-entry staleness test (user-entered balance flagged stale past its window) in `backend/tests/unit/manual-balance.test.ts` (FR-REW-010)
-- [ ] T019 [P] [US1] Custom-override valuation + fr-CA formatting test in `backend/tests/unit/valuation-override-locale.test.ts` (FR-REW-005-fmt / FR-REW-010)
+- [ ] T019 [P] [US1] Custom-override valuation + fr-CA formatting test in `backend/tests/unit/valuation-override-locale.test.ts` (FR-X-005 / FR-REW-010)
 - [ ] T020 [P] [US1] Expiry "expiring soon" flag test (default 60-day window, at-risk CAD, "expiry unknown") in `backend/tests/unit/expiry.test.ts` (FR-REW-009)
 - [ ] T021 [P] [US1] Integration test: open Points Wallet end-to-end in `backend/tests/integration/points-wallet.test.ts`
 

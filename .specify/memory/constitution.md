@@ -53,7 +53,7 @@ Added / expanded sections:
 
 Removed sections: none.
 
-Templates brought into compliance with v2.1.0 on 2026-06-26 (closes spec FR-X-018 / SC-016):
+Templates brought into compliance with v2.2.0 on 2026-06-26 (closes spec FR-X-018 / SC-016):
   - ✅ .specify/templates/plan-template.md — Constitution Check gate wired to all
        nine principles + Quality Standards, with NON-NEGOTIABLE markers and a
        required threat-model link.

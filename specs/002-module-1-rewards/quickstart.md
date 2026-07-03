@@ -90,7 +90,7 @@ Expected:
 
 ```bash
 <pkg> test rewards/contract/consumed   # BudgetState, CashFlowForecast, CreditState, MerchantGraph, GoalState, SafeToActSignal
-<pkg> test rewards/contract/provided   # CardLineup, PointsValuation, BestCardRecommendation, OfferCatalog, StatusState
+<pkg> test rewards/contract/provided   # CardLineup, PointsValuation, BestCardRecommendation, OfferCatalog, StatusState, TransferIntelligence
 ```
 
 Expected: all consumer + provider contract tests pass; an intentionally bumped/broken consumed schema **fails CI** and disables the dependent recommendation (version-skew behavior).

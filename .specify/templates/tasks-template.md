@@ -15,7 +15,7 @@ description: "Task list template for feature implementation"
 
 ## Constitution-Mandated Task Categories (FinOS)
 
-Every generated `tasks.md` MUST include tasks in these categories wherever the feature is in scope (see `.specify/memory/constitution.md` v2.1.0). Do not silently omit them:
+Every generated `tasks.md` MUST include tasks in these categories wherever the feature is in scope (see `.specify/memory/constitution.md` v2.2.0). Do not silently omit them:
 
 - **Contract tests (Principle VII)** — for each cross-module contract the feature consumes or provides, a **consumer** test AND a **provider** test that run in CI. Written before implementation.
 - **Money-correctness tests (Principle IV)** — known-value fixtures for every monetary calculation (incl. Canadian tax/fee/interest/FX/points edge cases); explicit rounding asserted; no binary-float types.

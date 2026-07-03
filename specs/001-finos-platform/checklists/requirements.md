@@ -31,7 +31,7 @@
 
 ## Template Compliance Gate (FR-X-018 / SC-016)
 
-- [ ] Spec Kit templates (`plan-template.md`, `spec-template.md`, `tasks-template.md`) confirmed compliant with Constitution v2.1.0 — **blocks authoring any P1 submodule spec until checked**
+- [x] Spec Kit templates (`plan-template.md`, `spec-template.md`, `tasks-template.md`) confirmed compliant with Constitution v2.2.0 — **blocks authoring any P1 submodule spec until checked**
 
 ## Notes
 
@@ -45,4 +45,4 @@
   than repeating them in every module, to keep the spec readable while keeping every module bound by them.
 - No [NEEDS CLARIFICATION] markers: the source docs (PDR, product brief, backlog, constitution) were
   rich enough to resolve open questions with documented assumptions instead.
-- All content-quality, requirement-completeness, and feature-readiness items pass. The spec may proceed to `/speckit-clarify` (optional) or `/speckit-plan`, but the **Template Compliance Gate above is still open**: no P1 submodule spec may be authored from the templates until they are confirmed compliant with Constitution v2.1.0 (FR-X-018 / SC-016).
+- All content-quality, requirement-completeness, and feature-readiness items pass. The spec may proceed to `/speckit-clarify` (optional) or `/speckit-plan`, but the **Template Compliance Gate above is still open**: no P1 submodule spec may be authored from the templates until they are confirmed compliant with Constitution v2.2.0 (FR-X-018 / SC-016).
