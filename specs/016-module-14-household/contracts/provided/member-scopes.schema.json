@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:household/MemberScopes/1.0.0",
+  "title": "MemberScopes",
+  "description": "The fine-grained, per-module access grants a viewing member holds over a subject member's data (FR-HH-001). Provided by Module 14 and ENFORCED by every module on every cross-user request. This contract describes WHAT was granted; it is NOT itself the enforcement point. Enforcement is server-side: the acting identity is derived from the validated session, the MemberScope grant is looked up server-side, and a denied access is audited (SC-015). UI-layer filtering alone is non-compliant (FR-HH-001). Default for any (viewer, subject, module) tuple with no explicit grant is NO ACCESS (least privilege, Constitution V). This contract carries NO financial values and NO secrets.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["household_id", "subject_profile_id", "grants", "freshness"],
+  "properties": {
+    "household_id": { "type": "string", "format": "uuid" },
+    "subject_profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "The member whose data is being shared (the data owner). Each subject controls the grants over their own data (a member grants visibility into their finances; it is not imposed on them, except guardian visibility over minors which the household owner/admin configures)."
+    },
+    "grants": {
+      "type": "array",
+      "description": "Per (viewer, module) grants over this subject. Absence of a grant = no access (least privilege). MUST NOT be relied on by the client for enforcement.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["viewer_profile_id", "module_id", "access_level"],
+        "properties": {
+          "viewer_profile_id": { "type": "string", "format": "uuid", "description": "The member granted visibility into the subject's data for this module." },
+          "module_id": {
+            "type": "string",
+            "enum": [
+              "spine", "rewards", "credit", "cash_safety", "bills", "pay",
+              "shopping", "inbox", "tasks", "habits", "focus", "travel",
+              "docs", "workspace", "household", "social"
+            ],
+            "description": "The bounded-context module the grant applies to. Grants are per-module so a member can be given, e.g., read access to Bills but not Rewards (least privilege, FR-HH-001)."
+          },
+          "access_level": {
+            "type": "string",
+            "enum": ["none", "read", "propose"],
+            "description": "none = explicit deny (overrides any inherited default); read = may view the subject's data for this module; propose = may view AND surface a recommend-only proposal the subject must still execute (FinOS never moves money — FR-X-003). There is intentionally NO 'write'/'execute' level: no member can move another's money."
+          },
+          "granted_at": { "type": "string", "format": "date-time" },
+          "expires_at": { "type": ["string", "null"], "format": "date-time", "description": "Optional time-boxed grant; past this instant the grant is treated as none (revoked member sees the Empty state immediately — ux-foundations §5.5)." }
+        }
+      }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the scope snapshot. A revocation MUST take effect immediately server-side regardless of this snapshot; consumers MUST NOT serve cached scope grants once a revocation event is observed (ux-foundations §5.5 — revoked member sees Empty state with no cached data)."
+    }
+  }
+}

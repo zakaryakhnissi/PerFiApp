@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/CreditState/1.0.0",
+  "title": "CreditState",
+  "description": "Score, factors, utilization, and due-date risk with freshness (FR-CORE-005; umbrella Key Entities). Provided by Module 0; the canonical SINGLE SOURCE of utilization and bands every module reasons against (Rewards FR-REW-003, Credit FR-CRD-002). Utilization is a SECONDARY GUARDRAIL input: when CreditState is ENTIRELY ABSENT a consumer MAY apply the documented healthy-band default (Constitution VI v2.2.0); when PRESENT but STALE the consumer MUST flag/withhold. Money fields are integer cents; band thresholds are decimal-string fractions in [0,1]; utilization values are decimal-string fractions normally in [0,1] (MAY exceed 1.0 only for genuinely over-limit cards). The utilization invariant is contract-test-enforced (T072), not pattern-enforced.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "bands", "aggregate_utilization", "aggregate_band", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "score": { "type": ["integer", "null"], "minimum": 300, "maximum": 900, "description": "Credit score from the Canadian bureau (Equifax/TransUnion range 300–900); null if no bureau data connected." },
+    "score_source": { "type": ["string", "null"], "description": "Bureau/source identifier; null when absent." },
+    "bands": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["optimal_max", "healthy_max", "warn_max"],
+      "description": "Canonical utilization band thresholds as fractions. Defaults: optimal < 0.10, healthy < 0.30, warn 0.30–0.50, hard_avoid > 0.50. User-adjustable; these defaults all modules reason against (umbrella CreditState).",
+      "properties": {
+        "optimal_max": { "type": "string", "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$", "default": "0.10", "description": "< this ⇒ optimal (credit-boosting). Decimal-string fraction in [0,1]." },
+        "healthy_max": { "type": "string", "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$", "default": "0.30", "description": "< this ⇒ healthy. Decimal-string fraction in [0,1]." },
+        "warn_max": { "type": "string", "pattern": "^(0(\\.[0-9]+)?|1(\\.0+)?)$", "default": "0.50", "description": ">= healthy_max and <= this ⇒ warn; > this ⇒ hard_avoid (never recommend a spend pushing past this). Decimal-string fraction in [0,1]." }
+      }
+    },
+    "aggregate_utilization": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Total balances / total limits across all revolving accounts, as a decimal-string fraction (computed in arbitrary precision). Normally in [0,1]; MAY exceed 1.0 only for genuinely over-limit cards (which always classify hard_avoid). A provider value that is NOT a true over-limit ratio (e.g. a percentage like '30' meant as 0.30) is a defect — the [0,1]-unless-over-limit invariant is contract-test-enforced (T072), not pattern-enforced, so '30' or '1.5'-from-a-bug is rejected by the fixture." },
+    "aggregate_band": { "type": "string", "enum": ["optimal", "healthy", "warn", "hard_avoid"], "description": "Derived band for aggregate_utilization against bands." },
+    "per_card": {
+      "type": "array",
+      "description": "Per-card utilization so consumers can evaluate both per-card and aggregate effects without recomputing.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["account_id", "balance", "credit_limit", "utilization", "band"],
+        "properties": {
+          "account_id": { "type": "string", "format": "uuid" },
+          "balance": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Amount owed, integer cents." },
+          "credit_limit": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Credit limit, integer cents." },
+          "utilization": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "balance/limit as a decimal-string fraction. Normally in [0,1]; MAY exceed 1.0 only for a genuinely over-limit card (classifies hard_avoid). The [0,1]-unless-over-limit invariant is contract-test-enforced (T072), not pattern-enforced." },
+          "band": { "type": "string", "enum": ["optimal", "healthy", "warn", "hard_avoid"] },
+          "statement_due_on": { "type": ["string", "null"], "format": "date", "description": "Next statement due date (due-date risk)." }
+        }
+      }
+    },
+    "due_date_risk": { "type": "boolean", "default": false, "description": "true if a statement payment is due within the at-risk window." },
+    "utilization_source": {
+      "type": "string",
+      "enum": ["bureau", "derived_from_accounts", "assumed_healthy_default"],
+      "default": "derived_from_accounts",
+      "description": "Provenance of utilization. assumed_healthy_default is the documented-default value a CONSUMER substitutes when CreditState is entirely absent (Constitution VI v2.2.0); the spine itself never emits assumed_healthy_default."
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Stale CreditState ⇒ consumers flag/withhold (do NOT silently fall back to the default; the default applies only to total ABSENCE)." }
+  }
+}

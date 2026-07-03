@@ -1,0 +1,60 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:rewards/BestCardRecommendation/1.0.0",
+  "title": "BestCardRecommendation",
+  "description": "A single best-card recommendation for a merchant/moment. Recommend-only (FinOS never moves money). MUST cite earn rate AND budget headroom AND utilization effect (SC-R-002). MUST NOT name a card that pushes utilization > 50% (hard-avoid).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommendation_id", "profile_id", "merchant_ref", "recommended_card_id", "utilization_warning", "reasoning", "freshness"],
+  "properties": {
+    "recommendation_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid" },
+    "merchant_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": { "merchant_id": { "type": "string" } }
+    },
+    "recommended_card_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "MUST NOT be a candidate whose projected per-card or aggregate utilization exceeds 50%."
+    },
+    "utilization_warning": {
+      "type": "boolean",
+      "description": "true iff the recommended card's projected utilization lands in the 30–50% warn band."
+    },
+    "utilization_source": {
+      "type": "string",
+      "enum": ["credit_state", "assumed_healthy_default"],
+      "default": "credit_state",
+      "description": "assumed_healthy_default when CreditState was absent (FR-REW-003; Constitution VI v2.2.0 documented-default exception)."
+    },
+    "safe_to_act_deferred": {
+      "type": "boolean",
+      "default": false,
+      "description": "true iff Cash Safety's SafeToActSignal overrode a spend-positive pick."
+    },
+    "reasoning": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["inputs", "rationale_en", "rationale_fr"],
+      "properties": {
+        "inputs": {
+          "type": "object",
+          "description": "MUST include earn_rate, budget_headroom_cents, and utilization_before/after.",
+          "required": ["earn_rate", "budget_headroom_cents", "utilization_before", "utilization_after"],
+          "properties": {
+            "earn_rate": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+            "budget_headroom_cents": { "type": "integer" },
+            "utilization_before": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" },
+            "utilization_after": { "type": "string", "pattern": "^[0-9]+(\\.[0-9]+)?$" }
+          }
+        },
+        "rationale_en": { "type": "string", "minLength": 1 },
+        "rationale_fr": { "type": "string", "minLength": 1 }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

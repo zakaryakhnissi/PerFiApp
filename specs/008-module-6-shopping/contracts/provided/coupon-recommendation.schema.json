@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:shopping/CouponRecommendation/1.0.0",
+  "title": "CouponRecommendation",
+  "description": "The single best VALID retail coupon for a merchant/checkout (FR-SHOP-001). Provided by Module 6 to Pay and Inbox. Recommend-only: FinOS surfaces the code; the USER applies it (no auto-fill/auto-submit/money movement, Constitution IV / FR-X-003). Selection maximizes expected CAD saving subject to the coupon's own validity terms (min spend, expiry, eligibility) and lists why it beat the runners-up (Clarification Q1). Stale coupons MUST be flagged/withheld, never surfaced as live (Constitution VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["recommendation_id", "profile_id", "merchant_ref", "code", "expected_saving", "terms", "reasoning", "freshness"],
+  "properties": {
+    "recommendation_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; cross-member reads are authZ-checked server-side (threat model IDOR)." },
+    "merchant_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": { "merchant_id": { "type": "string", "minLength": 1 } }
+    },
+    "code": { "type": "string", "minLength": 1, "description": "The coupon/promo code the user enters at checkout. FinOS never submits it on the user's behalf." },
+    "expected_saving": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Expected CAD saving in integer cents (percentage discounts computed in arbitrary precision, half-up at the final cent; foreign coupons FX-converted before display)." },
+    "discount_fraction": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Arbitrary-precision decimal-string discount factor for percentage coupons (e.g. '0.15' = 15% off); null for fixed-amount coupons. NEVER a binary float." },
+    "terms": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["expires_on"],
+      "description": "Validity terms that bound 'best valid' selection — expiry and minimum spend are part of validity, not afterthoughts.",
+      "properties": {
+        "expires_on": { "type": "string", "format": "date", "description": "Coupon expiry; an expired coupon is NOT a valid candidate." },
+        "minimum_spend": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Minimum cart spend required for the code to be valid; below this the code is not the 'best valid' choice." },
+        "stackable": { "type": "boolean", "default": false, "description": "true only when the coupon's own terms permit stacking; FinOS never asserts a stack the merchant disallows (Clarification Q1)." }
+      }
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "MUST explain why this code beat the runners-up (expected CAD saving vs validity terms) with bilingual rationale_en/rationale_fr (FR-X-006)."
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Coupon-feed freshness. Stale ⇒ the surface shows Stale/Unavailable and offers refresh; a stale coupon is never presented as live (Constitution VIII)." }
+  }
+}

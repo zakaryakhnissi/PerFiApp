@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:cashsafety/RunwayForecast/1.0.0",
+  "title": "RunwayForecast",
+  "description": "The user-facing runway: a forward-looking projection of balances with the lowest point, runway days, a flagged predicted shortfall, and the concrete micro-actions Cash Safety proposes to close it (FR-CASH-001/002; umbrella Provides list). Consumed by Pay, Bills, Shopping, Tasks, Rewards. Cash Safety DERIVES this from the spine's CashFlowForecast (finos:spine/CashFlowForecast/1.0.0) — it does NOT re-aggregate balances. All amounts are integer cents and the forecast is a MONEY output: a stale starting balance MUST flag/withhold (Constitution VIII — 'no runway calculation on a multi-day-old balance'). Micro-actions are PROPOSALS only — FinOS never moves money (Constitution IV; FR-CASH-002 forbids any cash-advance/credit origination).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["forecast_id", "profile_id", "horizon_days", "starting_balance", "safety_buffer", "projected_lowest_balance", "runway_days", "shortfall_flag", "micro_actions", "freshness"],
+  "properties": {
+    "forecast_id": { "type": "string", "format": "uuid" },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. Server-side authZ on the validated session identity — never a client-supplied profile_id (FR-X-010/FR-HH-001)."
+    },
+    "horizon_days": { "type": "integer", "minimum": 1, "description": "Forecast horizon length in days (inherits the spine forecast horizon; default set in research.md)." },
+    "starting_balance": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Net liquid starting position the runway is computed from, integer cents (Constitution VI — carry the basis that produced the figure)."
+    },
+    "safety_buffer": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "User-adjustable runway buffer, integer cents. runway_days counts days until the projected balance crosses this buffer (not zero). Canada-oriented default in research.md."
+    },
+    "projected_lowest_balance": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Lowest projected balance over the horizon, integer cents."
+    },
+    "projected_lowest_on": { "type": ["string", "null"], "format": "date", "description": "Date the lowest point is projected to occur." },
+    "runway_days": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Days until the projected balance crosses the safety buffer (0 = at/under buffer now). Mirrors CashFlowForecast.runway_days with the Cash-Safety buffer applied."
+    },
+    "shortfall_flag": {
+      "type": "boolean",
+      "description": "true if a projected balance breaches the safety buffer within the horizon. Drives unsafe SafeToActSignal verdicts and the Critical overdraft alert (ux-foundations §6.1)."
+    },
+    "confidence": {
+      "type": "string",
+      "enum": ["high", "low", "insufficient"],
+      "description": "Derived from the spine forecast method: recurring_plus_trend/recurring_only ⇒ high; sparse history ⇒ low; insufficient_history ⇒ insufficient (consumers treat as withheld/flagged, never confident)."
+    },
+    "points": {
+      "type": "array",
+      "description": "Optional per-day projection series for the runway chart (mirrors CashFlowForecast.points; same dates).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["date", "projected_balance"],
+        "properties": {
+          "date": { "type": "string", "format": "date" },
+          "projected_balance": { "$ref": "finos:common/MoneyCents/1.0.0" }
+        }
+      }
+    },
+    "micro_actions": {
+      "type": "array",
+      "description": "Concrete, ranked micro-actions Cash Safety PROPOSES to close a predicted shortfall (FR-CASH-002). Empty when shortfall_flag is false. NEVER includes a cash advance, loan, or any credit-origination action (FR-CASH-002 hard prohibition).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_id", "kind", "projected_gap_closed", "reasoning"],
+        "properties": {
+          "action_id": { "type": "string", "format": "uuid" },
+          "kind": {
+            "type": "string",
+            "enum": ["move_bill_date", "pause_roundup", "resequence_payments", "transfer_from_savings", "reduce_discretionary"],
+            "description": "Advisory category. move_bill_date proposes a later safe-to-pay date (coordinates with Bills/Pay); pause_roundup proposes pausing an active roundup rule; resequence_payments hands off to Pay's PaymentSchedule; transfer_from_savings proposes (never executes) moving the user's OWN funds between their OWN accounts; reduce_discretionary surfaces a budget-category trim. NO cash_advance / loan / credit option exists in this enum by constitutional design (FR-CASH-002)."
+          },
+          "projected_gap_closed": {
+            "$ref": "finos:common/MoneyCents/1.0.0",
+            "description": "How much of the predicted shortfall this action would close, integer cents. Computed in arbitrary precision, half-up at the final cent."
+          },
+          "target_ref": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "description": "Optional reference to the entity the action concerns (a bill, a roundup rule, a payment schedule).",
+            "properties": {
+              "ref_type": { "type": "string", "enum": ["bill", "roundup_rule", "payment_schedule", "account", "budget_category"] },
+              "ref_id": { "type": "string" }
+            },
+            "required": ["ref_type", "ref_id"]
+          },
+          "reasoning": { "$ref": "finos:common/Reasoning/1.0.0" }
+        }
+      }
+    },
+    "data_completeness": {
+      "type": "string",
+      "enum": ["complete", "partial"],
+      "description": "partial when the underlying CashFlowForecast was computed on a partial account picture (consumers MUST mark the runway 'Incomplete data', ux-foundations Partial state)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Inherits the freshness of the spine CashFlowForecast / starting balance. is_stale=true ⇒ the runway is flagged/withheld (Constitution VIII); consumers show the Withheld state, not a stale number presented as current."
+    }
+  }
+}

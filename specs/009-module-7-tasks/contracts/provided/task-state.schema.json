@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:tasks/TaskState/1.0.0",
+  "title": "TaskState",
+  "description": "A profile's money-aware tasks with their live links, schedule, and sync status (FR-TASK-001/003). Provided by Module 7 to Habits, Inbox, Workspace, and the originating modules. Tasks holds NO copy of a linked money figure — money values are read from the source contract at display time; only the link reference (id + contract version) is stored here. freshness reflects the schedule's dependence on CashFlowForecast (a stale forecast withholds payday-aware placement). Recommend/record-only: nothing here moves money (FR-X-003).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "tasks", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile. Cross-profile reads are authZ-checked server-side against the session identity + Household MemberScope, never a client-supplied id (threat model IDOR)." },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["task_id", "title", "status", "is_money_aware"],
+        "properties": {
+          "task_id": { "type": "string", "format": "uuid" },
+          "title": { "type": "string", "minLength": 1, "description": "User-authored title; displayed VERBATIM (not translated). Redacted from debug logs (may contain merchant/amount hints)." },
+          "notes": { "type": ["string", "null"], "description": "Optional user-authored notes; verbatim, not translated; redacted from debug logs." },
+          "status": { "type": "string", "enum": ["open", "scheduled", "in_progress", "completed", "archived"], "description": "Task lifecycle status." },
+          "priority": { "type": ["string", "null"], "enum": ["low", "medium", "high", null], "description": "Optional user priority." },
+          "is_money_aware": { "type": "boolean", "description": "true iff the task carries a TaskLink to a financial entity; false for plain unlinked to-dos." },
+          "link": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "description": "Live link to a financial entity. Null for unlinked tasks. Holds the reference ONLY — never a copy of a money value.",
+            "required": ["entity_type", "entity_id", "source_contract", "link_status"],
+            "properties": {
+              "entity_type": { "type": "string", "enum": ["bill", "merchant", "budget", "goal", "payment", "module_action"], "description": "Kind of linked entity (FR-TASK-001)." },
+              "entity_id": { "type": "string", "minLength": 1, "description": "Id of the linked entity in its owning module/contract." },
+              "source_contract": { "type": "string", "minLength": 1, "description": "Owning contract $id + version this link reads from, e.g. 'finos:spine/GoalState/1.0.0' or 'finos:bills/BillCalendar/1.0.0'. Version skew disables the link (SC-T-010)." },
+              "link_status": { "type": "string", "enum": ["live", "orphaned", "unavailable"], "description": "live = source present & version-compatible; orphaned = source entity deleted (no write-back on completion); unavailable = owning module/contract not yet shipped or version-skewed (degrades gracefully)." }
+            }
+          },
+          "schedule": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "description": "Computed placement (FR-TASK-003). Null if unscheduled.",
+            "required": ["placement_source"],
+            "properties": {
+              "scheduled_date": { "type": ["string", "null"], "format": "date", "description": "Day the task is placed. Null when placement is withheld/unscheduled." },
+              "placement_source": { "type": "string", "enum": ["payday_aware", "due_date", "manual", "unscheduled", "withheld_stale_forecast"], "description": "How the date was chosen. withheld_stale_forecast = CashFlowForecast was stale/absent, so payday-aware placement was WITHHELD (never guessed — FR-X-008). manual is never overwritten by auto-scheduling." },
+              "reasoning": { "$ref": "finos:common/Reasoning/1.0.0", "description": "Why this placement (which payday / which due date / the linked entity's freshness). Required when placement_source = payday_aware (FR-X-006)." }
+            }
+          },
+          "sync_status": { "type": "string", "enum": ["not_applicable", "synced", "pending_sync", "no_op_orphaned"], "default": "not_applicable", "description": "Status write-back outcome for a completed money-aware task. pending_sync = write-back failed/timed out and is being retried with backoff (FR-X-012); not shown as reconciled until the owning module confirms." }
+        }
+      }
+    },
+    "data_completeness": { "type": "string", "enum": ["complete", "partial"], "default": "complete", "description": "partial when some source modules (e.g. Bills/Pay) are absent and some links are unavailable (Partial state)." },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Schedule freshness derives from CashFlowForecast; a stale forecast flags payday-aware placements (FR-X-008)." }
+  }
+}

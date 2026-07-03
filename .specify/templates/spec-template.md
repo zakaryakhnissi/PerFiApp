@@ -103,6 +103,39 @@
 - **[Entity 1]**: [What it represents, key attributes without implementation]
 - **[Entity 2]**: [What it represents, relationships to other entities]
 
+### Money Correctness *(MANDATORY when the feature reads, computes, or displays monetary values)*
+
+<!--
+  Constitution Principle IV (Money Is Exact — NON-NEGOTIABLE) + Principle VIII (Fresh or Flagged).
+  Delete this section ONLY if the feature touches no monetary values — and state that explicitly.
+-->
+
+- **Numeric representation**: [integer minor units (cents) | arbitrary-precision decimal — NEVER binary floating point]
+- **Rounding rules**: [explicit rule per calculation, e.g. half-up to nearest cent; where each is applied; how intermediate products are handled]
+- **Currency & locale**: CAD; locale-correct formatting for en-CA and fr-CA (e.g. `1 234,56 $`)
+- **Determinism & fixtures**: [which calculations are pure & deterministic; the known-value fixtures they are verified against, including Canadian tax / fee / interest / FX / points edge cases]
+- **Idempotency**: [which state writes (ledgers, reminders, goal progress) must be idempotent and safe to retry; the idempotency key/strategy]
+- **Recommend-only**: Confirm the feature only recommends actions and never executes money movement on the user's behalf. [Confirmed / N/A]
+
+### Security & Privacy Threat Model *(MANDATORY when the feature touches credentials, aggregation tokens, or another person's financial data)*
+
+<!--
+  Constitution Principle V (Security & Least Privilege). REQUIRED for any feature in the scope above.
+  If genuinely out of scope, state why here and delete the table.
+-->
+
+- **Assets**: [credentials, aggregation/OAuth tokens, PII, balances, another user's data, ...]
+- **Trust boundaries / actors**: [user, household member, circle member, external feed, service, ...]
+- **Threats & mitigations**:
+
+  | Threat (e.g. token exfiltration, IDOR, account takeover) | Affected asset | Mitigation | Enforced server-side? |
+  |----------------------------------------------------------|----------------|------------|-----------------------|
+  | [threat] | [asset] | [mitigation] | [yes/no — client-only filtering does NOT satisfy this] |
+
+- **AuthZ enforcement**: [confirm every cross-user boundary check is enforced server-side, independent of any client-supplied identifier]
+- **Data minimization, retention & revocation**: [what is retained, for how long, the dormant-account bound, and what deletion cascades on consent/access revocation — within the stated SLA]
+- **Data residency**: [Canadian-region storage/processing; any cross-border transfer disclosed and covered by an accountability/transfer agreement]
+
 ## Success Criteria *(mandatory)*
 
 <!--

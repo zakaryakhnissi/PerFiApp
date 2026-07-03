@@ -1,0 +1,30 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:tasks/TaskCompletionEvent/1.0.0",
+  "title": "TaskCompletionEvent",
+  "description": "Append-only, idempotent record that a money-aware task was completed (FR-TASK-002, FR-X-007). Provided by Module 7 to Habits (advances streaks/XP for REAL financial actions), Inbox, and the originating module. This is the source-of-truth signal that 'a real financial action happened'. Keyed on source_event_id with a UNIQUE constraint: a replayed event applies the linked-entity status write-back and emits this event AT MOST ONCE (US2 AS-2, platform-decisions §4). Carries NO money figure and moves NO money (FR-X-003); consumers receive only the completion signal + the link reference, never raw linked amounts (threat model: data minimization).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["event_id", "source_event_id", "profile_id", "task_id", "completed_at", "writeback_outcome"],
+  "properties": {
+    "event_id": { "type": "string", "format": "uuid", "description": "Stable id of this completion event in the append-only store." },
+    "source_event_id": { "type": "string", "minLength": 1, "description": "Client-generated idempotency key for the completion. UNIQUE: a replay with the same source_event_id is a no-op for both the status write-back and this event (idempotency — Constitution IV, FR-X-003)." },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile. A cross-profile completion is authorized server-side against the session identity + the link owner's scope; a denied attempt is audited, not emitted as a completion (threat model: forged write-back)." },
+    "task_id": { "type": "string", "format": "uuid", "description": "The completed task." },
+    "completed_at": { "type": "string", "format": "date-time", "description": "UTC instant the task was completed. Stored in UTC; rendered to the user's locale at the edge." },
+    "link_ref": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Reference to the linked entity whose status this completion updated. Null for an unlinked (plain) task completion. Reference only — NEVER a money value.",
+      "required": ["entity_type", "entity_id", "source_contract"],
+      "properties": {
+        "entity_type": { "type": "string", "enum": ["bill", "merchant", "budget", "goal", "payment", "module_action"] },
+        "entity_id": { "type": "string", "minLength": 1 },
+        "source_contract": { "type": "string", "minLength": 1, "description": "Owning contract $id + version the status write-back targeted." }
+      }
+    },
+    "writeback_outcome": { "type": "string", "enum": ["synced", "pending_sync", "no_op_orphaned", "no_op_unlinked"], "description": "synced = owning module confirmed the status update; pending_sync = write-back failed/timed out, retrying with backoff (FR-X-012); no_op_orphaned = linked entity was deleted (no write-back); no_op_unlinked = plain task with no link." },
+    "moved_money": { "type": "boolean", "const": false, "description": "ALWAYS false. Tasks records completion and propagates STATUS only; it never moves money (FR-X-003). Any money action routes through the owning module's Confirm-Action sheet." },
+    "reasoning": { "$ref": "finos:common/Reasoning/1.0.0", "description": "Optional explainability envelope (what status changed and why); inputs are redacted from debug logs and recorded in full only in the append-only audit trail (FR-X-014)." }
+  }
+}

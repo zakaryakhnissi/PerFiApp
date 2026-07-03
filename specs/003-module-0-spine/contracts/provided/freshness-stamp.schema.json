@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:common/FreshnessStamp/1.0.0",
+  "title": "FreshnessStamp",
+  "description": "Canonical freshness metadata attached to every externally-sourced value across FinOS (Constitution VIII, FR-X-008). Published by Module 0 (Spine) and reused by every module. A consumer that reads is_stale=true MUST flag or withhold the dependent recommendation; a stale MONEY input MUST withhold (Constitution IV/VI).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source", "observed_at", "staleness_threshold_seconds", "is_stale"],
+  "properties": {
+    "source": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Feed/provider identifier the value was sourced from (e.g. 'plaid', 'credit_bureau', 'fx_feed', 'user_entered', 'derived'). Never a raw token or secret."
+    },
+    "observed_at": {
+      "type": "string",
+      "format": "date-time",
+      "description": "UTC instant the value was observed/fetched from its source. Stored in UTC; rendered to the user's locale/timezone at the edge."
+    },
+    "staleness_threshold_seconds": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Per-value window after which the value is stale. Canada-oriented defaults set in research.md, user-adjustable."
+    },
+    "is_stale": {
+      "type": "boolean",
+      "description": "Derived: (now - observed_at) > staleness_threshold_seconds. Authoritative staleness flag for consumers."
+    },
+    "next_refresh_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "Optional UTC instant of the next scheduled refresh, for UI 'updates in N min' affordances."
+    }
+  }
+}

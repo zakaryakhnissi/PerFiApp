@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:lifeadmin/DocumentVault/1.0.0",
+  "title": "DocumentVault",
+  "description": "A profile's structured wallet of important documents and stored receipts (FR-DOC-002). Provided by Module 12 to Workspace, Tasks, Inbox, and Travel. Documents are metadata + a reference to encrypted object storage (never inline content). Every cross-profile read is authZ-checked server-side against session identity (threat model). Money fields are integer minor units (MoneyCents); no binary float. Each externally-sourced or OCR-derived value carries a FreshnessStamp. NOTE: consumers receive document METADATA and capability-scoped access grants, never raw bytes or storage credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "documents"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile. Server derives the acting identity from the validated session; a client-supplied profile_id is NEVER trusted for authZ (threat model, FR-X-010)." },
+    "documents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["document_id", "profile_id", "category", "title", "storage_ref", "sharing", "created_at", "freshness"],
+        "properties": {
+          "document_id": { "type": "string", "format": "uuid", "description": "Stable canonical document id." },
+          "profile_id": { "type": "string", "format": "uuid", "description": "Redundant owner scoping for row-level-security enforcement." },
+          "category": {
+            "type": "string",
+            "enum": ["receipt", "warranty", "insurance_policy", "tax_document", "identity_document", "contract", "statement", "medical", "legal", "other"],
+            "description": "Structured category (FR-DOC-002). 'receipt' and 'warranty' documents may carry receipt_link_ref / warranty_ref."
+          },
+          "title": { "type": "string", "minLength": 1, "description": "User-facing title; bilingual display labels are resolved at the edge via @finos/format, but a user-entered title is stored as-is." },
+          "document_type_key": { "type": ["string", "null"], "description": "Canonical i18n key for the document type; resolved to EN/FR labels at the edge. A type surfaced to users in only one language is a bilingual defect (Constitution II)." },
+          "storage_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["object_key", "encryption", "region"],
+            "description": "Reference to the encrypted object in Canadian-region object storage. NEVER the bytes, NEVER a storage credential or signed URL (those are minted per-request, per-grant, server-side).",
+            "properties": {
+              "object_key": { "type": "string", "minLength": 1, "description": "Opaque storage key; not a public URL." },
+              "encryption": { "type": "string", "enum": ["kms_envelope_per_subject"], "description": "Per-subject field/object key envelope enabling crypto-shred deletion (FR-X-013/019)." },
+              "region": { "type": "string", "const": "ca-central-1", "description": "Canadian-region residency (FR-X-020). Cross-border storage is prohibited without disclosure + agreement." },
+              "content_type": { "type": ["string", "null"], "description": "MIME type (e.g. image/jpeg, application/pdf)." },
+              "byte_size": { "type": ["integer", "null"], "minimum": 0 }
+            }
+          },
+          "amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Optional document amount (e.g. receipt total) in integer cents. Present for receipts; OCR-derived amounts carry source='ocr' freshness and are user-confirmable." },
+          "amount_source": { "type": "string", "enum": ["ocr", "user_entered", "linked_transaction", "none"], "default": "none", "description": "Provenance of amount for explainability (FR-X-006). 'ocr' amounts are provisional until confirmed; an OCR amount is never treated as a settled money figure." },
+          "document_date": { "type": ["string", "null"], "format": "date", "description": "Date on the document (purchase date, policy date). Stored as a calendar date; rendered to locale at the edge." },
+          "merchant_ref": {
+            "type": ["object", "null"],
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "description": "Resolved MerchantGraph node, when the document is tied to a merchant (receipt/warranty).",
+            "properties": { "merchant_id": { "type": "string", "minLength": 1 } }
+          },
+          "receipt_link_ref": { "type": ["string", "null"], "format": "uuid", "description": "ReceiptLink id when this receipt is linked to a transaction (see ReceiptLinks contract)." },
+          "warranty_ref": { "type": ["string", "null"], "format": "uuid", "description": "Warranty id when this document is a warranty (see WarrantyReminders contract)." },
+          "source": { "type": "string", "enum": ["user_upload", "ocr", "email_inferred"], "default": "user_upload", "description": "Provenance. 'email_inferred' documents (e.g. a warranty PDF received via a connected email source) are subject to the FR-X-013 email-revocation purge; when set, email_sourced MUST be true." },
+          "email_sourced": { "type": "boolean", "default": false, "description": "true iff this document's sole/primary source is a connected email; purged within 7 days on email-access revocation regardless of store (FR-X-013)." },
+          "sharing": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["visibility"],
+            "description": "Export/sharing controls (FR-DOC-002). Default is private-to-owner; any grant is least-privilege and every access is audited.",
+            "properties": {
+              "visibility": { "type": "string", "enum": ["private", "household_scoped", "explicit_grant"], "default": "private", "description": "private = owner only; household_scoped = visible per Household MemberScope; explicit_grant = named grants only." },
+              "grants": {
+                "type": "array",
+                "description": "Explicit, least-privilege grants. Enforced server-side; UI filtering alone is non-compliant (FR-X-010).",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["grantee_profile_id", "capability", "granted_at"],
+                  "properties": {
+                    "grantee_profile_id": { "type": "string", "format": "uuid" },
+                    "capability": { "type": "string", "enum": ["view", "export"], "description": "view = read metadata + render; export = download/share the underlying file. No grant implies write/delete." },
+                    "granted_at": { "type": "string", "format": "date-time" },
+                    "expires_at": { "type": ["string", "null"], "format": "date-time" }
+                  }
+                }
+              }
+            }
+          },
+          "created_at": { "type": "string", "format": "date-time", "description": "UTC instant the document was stored." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the OCR/linking enrichment and any externally-sourced fields. For pure user-uploads, source='user_entered'." }
+        }
+      }
+    }
+  }
+}

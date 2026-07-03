@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/TransactionStream/1.0.0",
+  "title": "TransactionStream",
+  "description": "Normalized, categorized, de-duplicated canonical transactions linked to MerchantGraph nodes (FR-CORE-002). Provided by Module 0 to all modules. Amounts are integer minor units (MoneyCents). Each transaction carries a FreshnessStamp; pending transactions and dedup decisions are explicit so consumers never double-count.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "transactions", "freshness"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "cursor": { "type": ["string", "null"], "description": "Opaque pagination/sync cursor for incremental reads; ordering is by booked_at then transaction_id." },
+    "transactions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["transaction_id", "account_id", "amount", "direction", "status", "booked_at", "dedup_state", "freshness"],
+        "properties": {
+          "transaction_id": { "type": "string", "format": "uuid", "description": "Stable canonical FinOS id surviving dedup merges." },
+          "account_id": { "type": "string", "format": "uuid" },
+          "amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Transaction amount in integer cents (absolute magnitude; sign carried by direction)." },
+          "direction": { "type": "string", "enum": ["debit", "credit"], "description": "debit = outflow/spend; credit = inflow/refund." },
+          "status": { "type": "string", "enum": ["pending", "posted", "reversed"], "description": "pending amounts may change; consumers MUST treat pending as provisional and not as a settled money input for runway." },
+          "booked_at": { "type": "string", "format": "date-time", "description": "UTC posting/booking instant." },
+          "authorized_at": { "type": ["string", "null"], "format": "date-time" },
+          "description_raw": { "type": ["string", "null"], "description": "Raw provider descriptor (used for normalization; redacted from debug logs)." },
+          "merchant_id": { "type": ["string", "null"], "description": "Resolved MerchantGraph node id; null when normalization could not confidently resolve a merchant." },
+          "category": { "type": ["string", "null"], "description": "Canonical category key (bilingual labels resolved at the edge via @finos/format)." },
+          "category_source": { "type": "string", "enum": ["provider", "rules", "model", "user_override"], "default": "rules", "description": "Provenance of the category for explainability; user_override always wins." },
+          "iso_currency": { "type": "string", "pattern": "^[A-Z]{3}$", "default": "CAD" },
+          "cad_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Foreign transactions converted to CAD via a timestamped FX rate (arbitrary precision, half-up at the final cent). Equals amount for CAD transactions." },
+          "fx_rate": { "type": ["string", "null"], "pattern": "^[0-9]+(\\.[0-9]+)?$", "description": "Decimal-string FX rate used for cad_amount; null for CAD. Stale FX flags cad_amount (Constitution VIII)." },
+          "dedup_state": { "type": "string", "enum": ["unique", "merged_primary", "merged_duplicate", "suspected_duplicate"], "description": "merged_duplicate rows are suppressed from sums; suspected_duplicate is surfaced for confirmation and excluded from money math until resolved (FR-CORE-002, duplicate-transaction edge case)." },
+          "merged_into_transaction_id": { "type": ["string", "null"], "format": "uuid", "description": "For merged_duplicate: the surviving merged_primary id." },
+          "is_recurring": { "type": "boolean", "default": false, "description": "Heuristic recurrence flag powering Bills/Subscriptions consumers." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+  }
+}

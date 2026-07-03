@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:cashsafety/RoundupProposal/1.0.0",
+  "title": "RoundupProposal",
+  "description": "A rules-based sweep/roundup PROPOSAL: the rounded amount Cash Safety suggests routing to debt/TFSA/savings per the user's plan (FR-CASH-003). Consumed by Habits (daily ritual / RoundupProposals, umbrella Module 8 Consumes list). This is RECOMMEND-ONLY: FinOS never executes the transfer; the user approves each proposal in the Confirm-Action sheet (ux-foundations §4.2) and then executes it themselves. The CONFIRMED proposal is recorded in the append-only audit trail and is IDEMPOTENT — keyed on source_event_id with a UNIQUE constraint so a retried qualifying-purchase event never double-proposes or double-records (Constitution IV; FR-CASH-003; umbrella US3 acceptance scenario 5).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["proposal_id", "source_event_id", "profile_id", "rule_id", "trigger_txn_ref", "roundup_amount", "destination", "status", "reasoning", "freshness"],
+  "properties": {
+    "proposal_id": { "type": "string", "format": "uuid" },
+    "source_event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key — the qualifying-purchase event that triggered this proposal. A replay of the same source_event_id MUST return the existing proposal, never create a second one (UNIQUE; platform-decisions §4)."
+    },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. Server-side authZ on the validated session identity — never a client-supplied profile_id (FR-X-010/FR-HH-001)."
+    },
+    "rule_id": { "type": "string", "format": "uuid", "description": "The RoundupRule that produced this proposal (data-model.md)." },
+    "trigger_txn_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["transaction_id"],
+      "description": "Reference to the qualifying transaction (from the spine TransactionStream) that triggered the roundup. A reference only — Cash Safety does not copy raw transaction bodies.",
+      "properties": {
+        "transaction_id": { "type": "string" }
+      }
+    },
+    "roundup_amount": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Amount to sweep, integer cents = roundup_target - (transaction_amount mod roundup_target), computed in integer cents (no float). Example: $4.30 purchase, round-to-$1 ⇒ 70 cents. Exactness is fixture-guarded (Money Correctness)."
+    },
+    "destination": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["destination_kind"],
+      "description": "Where the user's plan routes the swept amount. Cash Safety only PROPOSES the destination; it never moves funds.",
+      "properties": {
+        "destination_kind": { "type": "string", "enum": ["debt_paydown", "tfsa", "savings", "goal"] },
+        "account_ref": { "type": ["string", "null"], "description": "Optional target account id (the user's OWN account)." },
+        "goal_ref": { "type": ["string", "null"], "format": "uuid", "description": "Optional GoalState goal_id when destination_kind = goal (drives time-to-goal contribution, FR-X-004)." }
+      }
+    },
+    "goal_contribution_days": {
+      "type": ["integer", "null"],
+      "description": "Optional time-to-goal contribution of this sweep in days, when destination is a goal (FR-X-004). Null when not goal-linked or not computable."
+    },
+    "status": {
+      "type": "string",
+      "enum": ["proposed", "confirmed", "dismissed", "superseded"],
+      "description": "proposed = surfaced, awaiting the user's Confirm-Action approval; confirmed = the user approved it (writes an append-only audit event; the user executes the transfer externally); dismissed = the user declined; superseded = a Cash Safety micro-action paused the roundup rule (pause_roundup) so this proposal no longer applies. FinOS NEVER auto-advances to confirmed (Constitution IV / SC-007)."
+    },
+    "confirmed_at": { "type": ["string", "null"], "format": "date-time", "description": "UTC instant the user confirmed; null until confirmed. Rendered to the user's locale at the edge." },
+    "reasoning": { "$ref": "finos:common/Reasoning/1.0.0" },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the triggering transaction / balance inputs. A stale balance underlying the destination context flags the proposal (the roundup amount itself is exact integer math on the known transaction)."
+    }
+  }
+}

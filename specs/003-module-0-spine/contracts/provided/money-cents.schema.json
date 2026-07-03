@@ -1,0 +1,21 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:common/MoneyCents/1.0.0",
+  "title": "MoneyCents",
+  "description": "Canonical money value object (Constitution IV, FR-X-002). Amounts are ALWAYS integer minor units (cents). No binary float anywhere in any money path. Currency is CAD by default (Canada-first, Constitution II); foreign amounts carry their original currency and are converted to CAD via a timestamped FX rate before display.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["amount_cents", "currency"],
+  "properties": {
+    "amount_cents": {
+      "type": "integer",
+      "description": "Integer minor units (cents). Signed: negative for outflows/owed amounts. NEVER a float/decimal-string for an amount."
+    },
+    "currency": {
+      "type": "string",
+      "pattern": "^[A-Z]{3}$",
+      "default": "CAD",
+      "description": "ISO-4217 currency code. Defaults to CAD; non-CAD amounts MUST be FX-converted to CAD (arbitrary precision, half-up at the final cent) before user display."
+    }
+  }
+}

@@ -38,9 +38,28 @@
 
 ## Constitution Check
 
-*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
+*GATE: Must pass before Phase 0 research. Re-check after Phase 1 design. Reference: `.specify/memory/constitution.md` (v2.2.0).*
 
-[Gates determined based on constitution file]
+Mark each gate **PASS / FAIL / N/A** with a one-line justification. Any **FAIL**, or an **N/A** that isn't justified, blocks the plan — either change the design or record the trade-off in [Complexity Tracking](#complexity-tracking). The two NON-NEGOTIABLE principles (IV, III) cannot be waived via Complexity Tracking.
+
+| # | Principle / Standard | Gate question | Status |
+|---|----------------------|---------------|--------|
+| I | Integration-First | Does every recommendation read from real budget / cash-flow / credit / goals state rather than isolated data? | ☐ |
+| II | Canada-First & Bilingual | CAD + time-to-goal context; EN/FR throughout; **locale-correct** formatting (fr-CA `1 234,56 $`, not `$1,234.56`)? | ☐ |
+| III | Test-First (NON-NEGOTIABLE) | Tests written → approved → failing before implementation, covering happy path + Canadian-banking / bilingual / cross-module edge cases? | ☐ |
+| IV | Money Is Exact (NON-NEGOTIABLE) | Integer minor units or arbitrary-precision decimal (never float); explicit unit-tested rounding; pure deterministic math vs known fixtures; idempotent retry-safe state writes; recommend-only (no money movement)? | ☐ |
+| V | Security & Least Privilege | TLS + at-rest encryption; secrets/tokens never plaintext/logged/committed and rotatable; authZ on every cross-user boundary; least privilege; **threat model present** if feature touches credentials, aggregation tokens, or another person's data? | ☐ |
+| VI | Explainable & Auditable | Recommendations carry inputs + reasoning; confirmed actions + state changes written to an immutable append-only audit trail; withhold-and-ask on missing / stale / conflicting inputs (or a **named, spec-documented default** for a single missing *secondary guardrail* input per the v2.2.0 exception — money inputs still withhold)? | ☐ |
+| VII | Module Boundaries, Contracts & Versioning | Cross-module data flows through schema-defined contracts (no shared mutable state); consumer + provider contract tests run in CI; contracts/APIs semver'd with migration + deprecation window for breaking changes? | ☐ |
+| VIII | Fresh or Flagged | Every external-feed value carries a freshness timestamp; stale-data recommendations flagged/withheld; timeouts / retries / rate-limit handling on all ingestion paths? | ☐ |
+| IX | Simplicity & YAGNI | Complexity justified by real user need; no pre-emptive abstractions; MVP scope? | ☐ |
+| QS | Quality Standards | Structured logging with PII/money **redaction** (audit trail kept separate from debug logs); PIPEDA + Quebec Law 25 + Consumer-Driven Banking; export/delete + dormant-account retention bound; **Canadian-region data residency** + cross-border-transfer disclosure; ≤300 ms cold-start / module-switch; WCAG 2.1 AA + bilingual screen-reader labels; not-a-registered-advisor framing? | ☐ |
+
+**Threat model (Principle V)** — REQUIRED when this feature touches credentials, aggregation tokens, or another person's financial data. Link to the spec's threat-model section: [link]. If genuinely out of scope, justify: ___
+
+**Initial Constitution Check** (before Phase 0): [PASS / FAIL — one-line summary]
+
+**Post-Design Constitution Check** (after Phase 1): [PASS / FAIL — one-line summary]
 
 ## Project Structure
 

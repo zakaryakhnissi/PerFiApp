@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:inbox/ModuleAlertEvent/1.0.0",
+  "title": "ModuleAlertEvent",
+  "description": "The standardized inbound alert envelope EVERY source module emits to the Inbox pipeline (ux-foundations §6.3). No module may call a push API directly; all alerts flow through this contract. Inbox owns prioritization, dedup, budgeting, bilingual digest assembly, breakthrough routing, and delivery. The emitting module owns the SUBSTANCE and the MONEY CORRECTNESS of the alert (any CAD value is computed and half-up-rounded upstream per Constitution IV); Inbox carries and renders it but never recomputes (spec Clarifications Q3). This is published by Inbox as the ingestion contract so every emitter conforms to one shape; Inbox is its consumer and validator.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["source_event_id", "module_id", "event_type", "priority_tier", "subject_ref", "payload", "freshness"],
+  "properties": {
+    "source_event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key. Re-ingesting the same source_event_id MUST NOT create a duplicate item or double-count the budget (FR-INB-007, Constitution IV idempotency)."
+    },
+    "module_id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Emitting module identifier (e.g. 'bills', 'cash_safety', 'shopping', 'credit', 'rewards', 'tasks', 'habits', 'travel', 'docs', 'social'). Authenticated at ingest as an in-process module identity, never a client-supplied value (Threat Model)."
+    },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Target household member. Routing is re-validated server-side against the session identity + MemberScope; this field is NOT trusted as the authorization source (Threat Model, FR-HH-001)."
+    },
+    "household_id": { "type": ["string", "null"], "format": "uuid" },
+    "event_type": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Stable per-module event type (e.g. 'free_trial_converting', 'predicted_overdraft', 'deal_radar', 'utilization_warning', 'points_expiring'). Part of the dedup key."
+    },
+    "priority_tier": {
+      "type": "string",
+      "enum": ["critical", "important", "informational"],
+      "description": "critical = time-sensitive/safety, eligible for breakthrough (ux-foundations §6.1); important = actionable within 24h, digest push; informational = digest/in-app only, no push."
+    },
+    "safety_class": {
+      "type": "string",
+      "enum": ["safe_to_act", "credit_hard_avoid", "budget_headroom", "optimization", "none"],
+      "default": "none",
+      "description": "Drives the platform precedence hierarchy for ordering/breakthrough (ux-foundations §10.4): safe_to_act > credit_hard_avoid > budget_headroom > optimization. A safety alert MUST never be ordered below an optimization alert (FR-INB-004)."
+    },
+    "subject_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["subject_hash"],
+      "description": "Opaque reference to the alert's subject (e.g. a bill id, merchant node, goal) used for dedup. Inbox does NOT dereference source-module domain objects; it treats them as opaque.",
+      "properties": {
+        "subject_hash": { "type": "string", "minLength": 1, "description": "Stable hash of the source subject; dedup key is (module_id, event_type, subject_hash, 24h window)." },
+        "ref_kind": { "type": ["string", "null"], "description": "Optional non-PII descriptor of the subject kind (e.g. 'bill', 'merchant', 'goal')." }
+      }
+    },
+    "payload": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["text_en", "text_fr", "cta"],
+      "description": "Localized, actionable item content. An alert lacking either text_en or text_fr, or lacking a CTA, is REJECTED by the assembler (FR-INB-005, bilingual integrity).",
+      "properties": {
+        "text_en": { "type": "string", "minLength": 1, "description": "Item description, English (en-CA)." },
+        "text_fr": { "type": "string", "minLength": 1, "description": "Item description, French (fr-CA). A missing fr string is a bilingual defect (Constitution II)." },
+        "cta": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["label_en", "label_fr", "action_url"],
+          "properties": {
+            "label_en": { "type": "string", "minLength": 1, "description": "Verb CTA, English (e.g. 'Review', 'Go to Bills')." },
+            "label_fr": { "type": "string", "minLength": 1, "description": "Verb CTA, French (e.g. 'Examiner', 'Aller aux factures')." },
+            "action_url": { "type": "string", "minLength": 1, "pattern": "^finos://", "description": "Allowlisted in-app deep link ONLY (finos:// scheme). Arbitrary external URLs are rejected to prevent notification phishing (Threat Model)." }
+          }
+        },
+        "cad_amount": {
+          "$ref": "finos:common/MoneyCents/1.0.0",
+          "description": "OPTIONAL. Any monetary value MUST be carried as MoneyCents (integer amount_cents, ISO-4217 currency, default CAD) — never a float/bare number. Computed and half-up-rounded by the EMITTING module (Constitution IV); Inbox renders via @finos/format and never recomputes/converts (Clarifications Q3)."
+        },
+        "time_to_goal_note_en": { "type": ["string", "null"], "description": "Optional time-to-goal context, English (FR-X-004)." },
+        "time_to_goal_note_fr": { "type": ["string", "null"], "description": "Optional time-to-goal context, French." }
+      }
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "Optional but RECOMMENDED for any alert that is itself a recommendation (e.g. 'why this sender is impulse-first', 'why this is critical') — Constitution VI, FR-X-006."
+    },
+    "expires_at": {
+      "type": ["string", "null"],
+      "format": "date-time",
+      "description": "UTC instant after which the alert is no longer actionable (e.g. 'trial converts tonight'). An alert delivered after expires_at is dropped from push and shown expired in-app (spec edge case)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Source freshness, RELAYED verbatim by Inbox. A stale-MONEY alert MUST be flagged and MUST NOT be elevated to a push (FR-INB-005, FR-X-008, Clarifications Q4). Inbox never re-derives or 'freshens' this."
+    }
+  }
+}

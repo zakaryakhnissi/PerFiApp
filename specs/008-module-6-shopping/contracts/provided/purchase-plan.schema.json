@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:shopping/PurchasePlan/1.0.0",
+  "title": "PurchasePlan",
+  "description": "A buy-now-vs-wait decision for an item (the umbrella's PurchasePlan / Buy-Now-vs-Wait Score). Provided by Module 6 to Tasks, Pay, and Inbox. Recommend-only (FinOS never moves money). Grounded in BudgetState/CashFlowForecast/GoalState (PRIMARY money inputs: stale/missing ⇒ score WITHHELD, never guessed) and SafeToActSignal (Cash Safety precedence). MUST cite price trend AND budget headroom AND runway/safety (SC-SH-001).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["plan_id", "profile_id", "merchant_ref", "decision", "score", "reasoning", "freshness"],
+  "properties": {
+    "plan_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; cross-member reads are authZ-checked server-side (threat model IDOR)." },
+    "merchant_ref": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["merchant_id"],
+      "properties": { "merchant_id": { "type": "string", "minLength": 1 } }
+    },
+    "watch_id": { "type": ["string", "null"], "format": "uuid", "description": "Optional link to the WatchedItems entry this plan concerns." },
+    "decision": {
+      "type": "string",
+      "enum": ["buy_now", "wait", "neutral"],
+      "description": "buy_now is FORBIDDEN when SafeToActSignal flags risk (Cash Safety precedence) and when no safety input is available for a material spend (capped at wait/neutral, Clarification Q4)."
+    },
+    "score": { "type": "number", "minimum": 0, "maximum": 1, "description": "Buy-now-vs-wait confidence in [0,1]; higher = stronger buy-now. Derived, not a money value." },
+    "recommended_best_date": { "type": ["string", "null"], "format": "date", "description": "Projected best date to buy; null when no better date is predictable. Rendered in the active locale at the edge." },
+    "projected_saving_by_waiting": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Estimated CAD cents saved by waiting to recommended_best_date; 0 when waiting yields no saving." },
+    "goal_impact": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Time-to-goal impact of buying now vs waiting; null when no goal is linked (line omitted, never shown as 'no goal').",
+      "required": ["goal_id", "days_delta"],
+      "properties": {
+        "goal_id": { "type": "string", "format": "uuid" },
+        "days_delta": { "type": "integer", "description": "Days added (+) or saved (-) toward the linked goal if the user buys now versus waiting." }
+      }
+    },
+    "safety_signal_source": {
+      "type": "string",
+      "enum": ["safe_to_act_signal", "cash_flow_forecast", "unavailable"],
+      "default": "safe_to_act_signal",
+      "description": "Which safety input grounded the decision. 'cash_flow_forecast' = fell back to spine forecast when SafeToActSignal absent; 'unavailable' = no safety input, decision capped at wait/neutral for material spends (Clarification Q4; Constitution VI documented-default boundary)."
+    },
+    "safe_to_act_deferred": { "type": "boolean", "default": false, "description": "true iff Cash Safety's SafeToActSignal overrode a would-be buy_now (conflict + resolution surfaced via the Conflict Banner)." },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "MUST include price_trend, budget_headroom_cents, and a runway/safety input in inputs, plus bilingual rationale_en/rationale_fr (FR-X-006, SC-SH-001)."
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the most-stale money input the score depends on; stale money input ⇒ score withheld upstream, never served on this contract as fresh." }
+  }
+}

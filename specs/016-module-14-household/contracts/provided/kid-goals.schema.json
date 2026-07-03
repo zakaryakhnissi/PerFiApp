@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:household/KidGoals/1.0.0",
+  "title": "KidGoals",
+  "description": "A minor member's chore-based allowances and kid-friendly savings goals (FR-HH-002). Provided by Module 14 to Goals (Spine) — which mirrors a KidGoal as a GoalState entry for time-to-goal context — and to Habits (chore completion can advance a habit streak). All monetary amounts are integer minor units (CAD cents) via MoneyCents (Constitution IV) — NEVER float. FinOS NEVER moves money: an allowance accrual is a tracked, recommend-only ledger figure the guardian executes in the real world (FR-X-003); the 'paid' state is a record of a real-world action, not a FinOS transfer. Allowance accrual and chore-completion writes are idempotent, keyed on source_event_id (FR-X-003). Visibility is gated by MemberScope/guardian relationship (FR-HH-001): a kid sees only their own KidGoals (ux-foundations §10.6).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["household_id", "kid_profile_id", "goals", "freshness"],
+  "properties": {
+    "household_id": { "type": "string", "format": "uuid" },
+    "kid_profile_id": { "type": "string", "format": "uuid", "description": "The minor member who owns these goals/allowances. AuthZ server-side: only the kid and their guardian(s) (per MemberScope) may read." },
+    "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "default": "CAD", "description": "Canada-first: CAD by default (Constitution II)." },
+    "goals": {
+      "type": "array",
+      "description": "May be empty (kid has no goals yet — consumers show the Empty state, never a zero-filled '$0.00').",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kid_goal_id", "name", "target_amount", "saved_amount", "status"],
+        "properties": {
+          "kid_goal_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string", "minLength": 1, "description": "Kid-chosen goal name (e.g. a toy). Displayed verbatim; not translated." },
+          "target_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Goal target, integer cents." },
+          "saved_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Amount accrued toward the goal from completed allowances, integer cents. A MONEY value: if its freshness is stale, time-to-goal context is flagged, not silently shown as current." },
+          "time_to_goal_days": { "type": ["integer", "null"], "minimum": 0, "description": "Computed days to completion at the current allowance accrual pace; null when pace is unknown/zero — never guessed (Constitution VI)." },
+          "status": { "type": "string", "enum": ["active", "achieved", "paused", "archived"] }
+        }
+      }
+    },
+    "allowances": {
+      "type": "array",
+      "description": "Chore-based allowance definitions for this kid. Optional; a kid may have goals without allowances or vice versa.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["allowance_id", "chore_name", "reward_amount", "cadence", "accrual_state"],
+        "properties": {
+          "allowance_id": { "type": "string", "format": "uuid" },
+          "chore_name_en": { "type": "string", "minLength": 1, "description": "Chore label in English (en-CA). Both EN and FR required where the chore is a FinOS-suggested template; user-entered chores are displayed verbatim in the language entered." },
+          "chore_name_fr": { "type": "string", "minLength": 1, "description": "Chore label in French (fr-CA). A missing fr label on a FinOS-supplied template chore is a bilingual defect (Constitution II)." },
+          "chore_name": { "type": "string", "minLength": 1, "description": "User-entered chore name when the chore is not a FinOS template (displayed verbatim, single language)." },
+          "reward_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "CAD cents earned per completion. Integer cents — never float." },
+          "cadence": { "type": "string", "enum": ["per_completion", "daily", "weekly", "monthly"], "description": "How the chore recurs / how the reward accrues." },
+          "linked_kid_goal_id": { "type": ["string", "null"], "format": "uuid", "description": "Optional goal this allowance accrues toward; advances saved_amount on completion." },
+          "linked_habit_id": { "type": ["string", "null"], "format": "uuid", "description": "Optional Habits streak this chore completion advances (FR-HH-002 → Habits). Real completion only — never a manual streak bump." },
+          "accrual_state": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["accrued_amount", "paid_amount"],
+            "properties": {
+              "accrued_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Total earned-but-not-yet-handed-over, integer cents. A tracked ledger figure; FinOS never disburses it." },
+              "paid_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Total a guardian has recorded as handed over in the real world, integer cents. 'Paid' is a RECORD of a real-world action (recommend-only, FR-X-003), not a FinOS money movement." },
+              "last_completed_at": { "type": ["string", "null"], "format": "date-time" }
+            }
+          }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the kid-goals snapshot. saved_amount/accrued_amount are MONEY values: a stale snapshot flags time-to-goal context rather than presenting it as current (Constitution VIII)." }
+  }
+}

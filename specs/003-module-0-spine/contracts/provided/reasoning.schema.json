@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:common/Reasoning/1.0.0",
+  "title": "Reasoning",
+  "description": "Canonical explainability envelope (Constitution VI, FR-X-006). Published by Module 0 and reused by every module that produces a recommendation. Carries the exact inputs and bilingual rationale that produced a result so it can be shown to the user and reproduced in debugging.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["inputs", "rationale_en", "rationale_fr"],
+  "properties": {
+    "inputs": {
+      "type": "object",
+      "description": "The input values (with their sources/freshness where applicable) that produced the result. Redacted from debug logs; recorded in full only in the append-only audit trail.",
+      "additionalProperties": true
+    },
+    "rationale_en": { "type": "string", "minLength": 1, "description": "Human-readable 'why', English (en-CA)." },
+    "rationale_fr": { "type": "string", "minLength": 1, "description": "Human-readable 'why', French (fr-CA). A missing fr rationale is a bilingual defect (Constitution II)." }
+  }
+}

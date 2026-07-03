@@ -1,0 +1,90 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:inbox/NotificationDigest/1.0.0",
+  "title": "NotificationDigest",
+  "description": "A bundled, prioritized, deduplicated set of InboxItems for one delivery window. Provided to Habits (daily ritual), Shopping (impulse signals), Tasks. Enforces the platform notification budget (SC-009): at most 1-2 money pushes/day with a critical breakthrough ceiling. Items are ordered Critical -> Important -> Informational and, within a tier, by the safety precedence hierarchy (ux-foundations §10.4). Inbox is the SOLE owner of the push surface; no other module dispatches a push (ux-foundations §6.3). All monetary values inside items are rendered via @finos/format; Inbox carries but never recomputes them (Clarifications Q3).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["digest_id", "profile_id", "window", "items", "budget_consumed", "dispatch_state", "freshness"],
+  "properties": {
+    "digest_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key for dispatch. Re-dispatching the same digest_id MUST NOT re-send an acknowledged push or double-count the budget (FR-INB-007)."
+    },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning household member. Reads are authZ-checked server-side against session identity + MemberScope; never a client-supplied id (Threat Model, SC-015)."
+    },
+    "window": {
+      "type": "string",
+      "enum": ["morning", "evening", "breakthrough"],
+      "description": "Delivery window. Default cadence is evening-only with morning user-enabled (Clarifications Q1); 'breakthrough' is the immediate critical-bypass dispatch (ux-foundations §6.1)."
+    },
+    "title_en": { "type": "string", "minLength": 1, "description": "Push title, English (e.g. '3 money updates')." },
+    "title_fr": { "type": "string", "minLength": 1, "description": "Push title, French (e.g. '3 mises à jour financières'). A missing fr title is a bilingual defect." },
+    "items": {
+      "type": "array",
+      "minItems": 1,
+      "description": "Ordered InboxItems: Critical first, then Important, then Informational; within a tier by safety_class precedence (safe_to_act > credit_hard_avoid > budget_headroom > optimization).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["item_id", "source_event_id", "module_id", "tier", "dedup_key", "text_en", "text_fr", "cta", "state", "freshness"],
+        "properties": {
+          "item_id": { "type": "string", "format": "uuid" },
+          "source_event_id": { "type": "string", "format": "uuid", "description": "The originating ModuleAlertEvent.source_event_id (idempotency lineage)." },
+          "module_id": { "type": "string", "minLength": 1 },
+          "tier": { "type": "string", "enum": ["critical", "important", "informational"] },
+          "safety_class": { "type": "string", "enum": ["safe_to_act", "credit_hard_avoid", "budget_headroom", "optimization", "none"], "default": "none" },
+          "dedup_key": { "type": "string", "minLength": 1, "description": "(module_id, event_type, subject_hash) within a 24h window; identical keys collapse to one item (SC-I-005)." },
+          "text_en": { "type": "string", "minLength": 1 },
+          "text_fr": { "type": "string", "minLength": 1 },
+          "cta": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["label_en", "label_fr", "action_url"],
+            "properties": {
+              "label_en": { "type": "string", "minLength": 1 },
+              "label_fr": { "type": "string", "minLength": 1 },
+              "action_url": { "type": "string", "minLength": 1, "pattern": "^finos://", "description": "Allowlisted in-app deep link only (anti-phishing)." }
+            }
+          },
+          "cad_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Optional; carried from the source alert, rendered via @finos/format, never recomputed/converted by Inbox (Clarifications Q3)." },
+          "state": {
+            "type": "string",
+            "enum": ["active", "queued", "delivered", "expired", "dismissed", "overridden"],
+            "description": "queued = held to next digest under budget pressure (never dropped); expired = past expires_at; overridden = lost a conflict to a higher safety_class alert (shown 'see safety alert first', ux-foundations §10.4)."
+          },
+          "overridden_by": { "type": ["string", "null"], "format": "uuid", "description": "item_id of the winning (higher-precedence) item when state = overridden." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Relayed from the source alert. A stale-money item is flagged and is NOT pushed (FR-INB-005)." }
+        }
+      }
+    },
+    "budget_consumed": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["money_pushes_today", "critical_pushes_today"],
+      "description": "Per-user daily push accounting. Enforces SC-009: money_pushes_today MUST NOT exceed the configured budget (default 2); critical_pushes_today MUST NOT exceed the critical ceiling (default 1).",
+      "properties": {
+        "money_pushes_today": { "type": "integer", "minimum": 0 },
+        "critical_pushes_today": { "type": "integer", "minimum": 0 },
+        "budget_limit": { "type": "integer", "minimum": 0, "default": 2 },
+        "critical_ceiling": { "type": "integer", "minimum": 0, "default": 1 }
+      }
+    },
+    "coalesced_critical_count": {
+      "type": ["integer", "null"],
+      "minimum": 0,
+      "description": "For a breakthrough window: the number of critical alerts coalesced into this single push ('N urgent money alerts'), per the critical ceiling (Clarifications Q2)."
+    },
+    "dispatch_state": {
+      "type": "string",
+      "enum": ["assembled", "dispatched", "acknowledged", "suppressed_by_preference", "failed"],
+      "description": "suppressed_by_preference = push withheld per NotificationPreference, but critical safety items remain surfaced in-app and the suppression is audited (FR-INB-006, Clarifications Q5). failed = retried with backoff (FR-X-012); retry is idempotent on digest_id."
+    },
+    "audit_ref": { "type": ["string", "null"], "format": "uuid", "description": "Append-only audit event id for this dispatch (FR-X-007, FR-INB-008)." },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the digest assembly itself (source = 'derived')." }
+  }
+}

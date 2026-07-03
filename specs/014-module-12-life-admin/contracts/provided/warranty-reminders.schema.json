@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:lifeadmin/WarrantyReminders/1.0.0",
+  "title": "WarrantyReminders",
+  "description": "Warranties stored against big-ticket purchases and the expiry reminders derived from them (FR-DOC-001). Provided by Module 12 to Tasks (creates a task/reminder) and Inbox (digest alert) and Workspace (returns/claims playbooks). Module 12 EMITS reminder intents; it MUST NOT send push notifications directly — reminders route through the Inbox digest pipeline (ux-foundations §6). Reminder generation is idempotent: re-running for the same warranty + reminder offset does not create a duplicate task/alert (umbrella M13 AS-3 pattern, FR-X-003). Money fields are integer minor units; no binary float. Dates are calendar dates; reminder scheduling computes in UTC.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "warranties"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; authZ from validated session (FR-X-010)." },
+    "warranties": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["warranty_id", "profile_id", "document_id", "coverage_kind", "expires_on", "reminders", "created_at"],
+        "properties": {
+          "warranty_id": { "type": "string", "format": "uuid" },
+          "profile_id": { "type": "string", "format": "uuid" },
+          "document_id": { "type": "string", "format": "uuid", "description": "The warranty document in DocumentVault." },
+          "item_name": { "type": ["string", "null"], "description": "Big-ticket item the warranty covers (e.g. 'refrigerator'). Display localized at the edge." },
+          "linked_transaction_id": { "type": ["string", "null"], "format": "uuid", "description": "The big-ticket purchase transaction, when linked via a ReceiptLink." },
+          "purchase_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Optional purchase price in integer cents (drives 'big-ticket' classification and at-risk value framing). No float." },
+          "coverage_kind": { "type": "string", "enum": ["manufacturer", "extended", "credit_card_purchase_protection", "store", "other"], "description": "Type of coverage; 'credit_card_purchase_protection' may be cross-referenced with Rewards CardLineup perks (informational only)." },
+          "purchase_date": { "type": ["string", "null"], "format": "date" },
+          "expires_on": { "type": "string", "format": "date", "description": "Warranty expiry date. Drives reminder scheduling." },
+          "expiry_source": { "type": "string", "enum": ["user_entered", "ocr", "computed_from_term"], "default": "user_entered", "description": "Provenance of expires_on for explainability. 'computed_from_term' = purchase_date + term_months; the term is shown in reasoning." },
+          "term_months": { "type": ["integer", "null"], "minimum": 0, "description": "Coverage term when expiry is computed from purchase date." },
+          "reminders": {
+            "type": "array",
+            "description": "Derived reminder intents emitted to Tasks/Inbox. Generation is idempotent on (warranty_id, offset_days).",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["reminder_id", "fire_on", "offset_days", "priority_tier", "status"],
+              "properties": {
+                "reminder_id": { "type": "string", "format": "uuid", "description": "Idempotency key: UNIQUE on (warranty_id, offset_days). A replay does not create a duplicate task/alert (FR-X-003)." },
+                "fire_on": { "type": "string", "format": "date", "description": "expires_on minus offset_days (default offsets set in research.md, user-adjustable)." },
+                "offset_days": { "type": "integer", "minimum": 0, "description": "Days before expiry the reminder fires (e.g. 30)." },
+                "priority_tier": { "type": "string", "enum": ["important", "informational"], "default": "important", "description": "Inbox notification tier (ux-foundations §6.1). Warranty expiry is 'important' (actionable), never 'critical' (reserved for cash-safety)." },
+                "status": { "type": "string", "enum": ["scheduled", "emitted", "dismissed", "cancelled"], "description": "'emitted' once handed to the Inbox digest; 'cancelled' when the warranty is deleted or expiry changes." },
+                "localized_summary": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": ["en", "fr"],
+                  "description": "Bilingual short description for the Inbox item (Constitution II; a single-language summary is a defect).",
+                  "properties": {
+                    "en": { "type": "string", "minLength": 1 },
+                    "fr": { "type": "string", "minLength": 1 }
+                  }
+                }
+              }
+            }
+          },
+          "source": { "type": "string", "enum": ["user_upload", "ocr", "email_inferred"], "default": "user_upload" },
+          "email_sourced": { "type": "boolean", "default": false, "description": "true iff sole/primary source is a connected email; purged on email revocation within 7 days (FR-X-013)." },
+          "created_at": { "type": "string", "format": "date-time" }
+        }
+      }
+    }
+  }
+}

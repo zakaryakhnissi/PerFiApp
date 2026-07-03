@@ -1,0 +1,72 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:credit/CreditFactors/1.0.0",
+  "title": "CreditFactors",
+  "description": "The Credit Monitor read-model this module OWNS and PROVIDES: the user's Canadian credit score, score band, and the ranked top factors driving it, each with a bilingual explanation and a FreshnessStamp (FR-CRD-001). This is DISTINCT from the spine's finos:spine/CreditState/1.0.0 — the spine remains the SINGLE canonical provider of utilization, bands, and due-date risk (FR-CORE-005); this contract carries the bureau-sourced SCORE and FACTOR narrative that Module 2 derives and surfaces, never a competing utilization figure. Score is a bureau MONEY-adjacent guardrail value: when the underlying bureau feed is STALE the score is flagged stale and dependent coaching withholds per Fresh-or-Flagged (Constitution VIII). Consumers: Credit UI, Household. Recommend-only — no money movement.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "freshness"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ enforced server-side against the validated session identity — never a client-supplied profile_id (threat model IDOR; household visibility gated by MemberScope per FR-HH-001)."
+    },
+    "household_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Household this profile belongs to, if any. Another member's CreditFactors is never exposed outside the owner's granted MemberScope."
+    },
+    "score": {
+      "type": ["integer", "null"],
+      "minimum": 300,
+      "maximum": 900,
+      "description": "Canadian bureau credit score (Equifax/TransUnion range 300–900). null when no bureau feed is connected — consumers render the Empty/Connect state, never a zero-filled score."
+    },
+    "score_band": {
+      "type": ["string", "null"],
+      "enum": ["poor", "fair", "good", "very_good", "excellent", null],
+      "description": "Coarse band derived from score for display; null when score is null."
+    },
+    "score_source": {
+      "type": ["string", "null"],
+      "description": "Bureau/source identifier (e.g. 'equifax_canada', 'transunion_canada'); null when absent. Never a raw token or secret."
+    },
+    "score_delta_since_last": {
+      "type": ["integer", "null"],
+      "description": "Signed change in score versus the previous observation (e.g. +12, -5); null on first observation or when score is null. Informational only."
+    },
+    "top_factors": {
+      "type": "array",
+      "description": "Ranked factors driving the score (most impactful first). Each carries a bilingual explanation so the Credit Monitor is explainable (Constitution VI). May be empty when no bureau report is available.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["factor_code", "impact", "label_en", "label_fr"],
+        "properties": {
+          "factor_code": {
+            "type": "string",
+            "enum": ["utilization", "payment_history", "credit_age", "credit_mix", "new_inquiries", "derogatory_marks", "total_accounts", "other"],
+            "description": "Normalized factor category. 'utilization' here is the NARRATIVE factor; the authoritative utilization figure/band always comes from finos:spine/CreditState/1.0.0, not from this contract."
+          },
+          "impact": {
+            "type": "string",
+            "enum": ["positive", "neutral", "negative"],
+            "description": "Direction of this factor's effect on the score."
+          },
+          "weight_rank": {
+            "type": ["integer", "null"],
+            "minimum": 1,
+            "description": "1 = most impactful factor; null when the bureau does not rank."
+          },
+          "label_en": { "type": "string", "minLength": 1, "description": "Human-readable factor explanation, English (en-CA)." },
+          "label_fr": { "type": "string", "minLength": 1, "description": "Human-readable factor explanation, French (fr-CA). A missing fr label is a bilingual defect (Constitution II)." }
+        }
+      }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the bureau-sourced score/factors. Stale ⇒ score and dependent coaching are flagged/withheld; a stale score is never shown as current (FR-CRD-001/004, Constitution VIII)."
+    }
+  }
+}

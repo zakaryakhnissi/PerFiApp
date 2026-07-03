@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:rewards/OfferCatalog/1.0.0",
+  "title": "OfferCatalog",
+  "description": "Normalized card-linked offers tied to MerchantGraph nodes and budget categories. Provided by Module 1 to Shopping & Deals. Stale offers MUST be flagged/withheld by consumers.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "offers"],
+  "properties": {
+    "profile_id": { "type": "string", "format": "uuid" },
+    "offers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["offer_id", "issuer", "merchant_ref", "budget_category", "reward_description_en", "reward_description_fr", "activation_state", "freshness"],
+        "properties": {
+          "offer_id": { "type": "string", "format": "uuid" },
+          "issuer": { "type": "string", "minLength": 1 },
+          "merchant_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["merchant_id"],
+            "properties": { "merchant_id": { "type": "string" } }
+          },
+          "budget_category": { "type": "string", "minLength": 1 },
+          "reward_description_en": { "type": "string", "minLength": 1 },
+          "reward_description_fr": { "type": "string", "minLength": 1 },
+          "activation_state": { "type": "string", "enum": ["available", "activated"] },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    }
+  }
+}

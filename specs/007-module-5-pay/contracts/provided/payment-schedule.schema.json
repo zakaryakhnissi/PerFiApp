@@ -1,0 +1,98 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:pay/PaymentSchedule/1.0.0",
+  "title": "PaymentSchedule",
+  "description": "An ordered, dated set of PROPOSED payment steps produced by the Payment Sequencer (Module 5, FR-PAY-002/003) and recorded on user acceptance. FinOS MOVES NO MONEY: each step is a proposal/record the user executes externally and that Bills reflects in the bill calendar (Constitution IV, FR-X-003). The ordering avoids overdrafts (no intermediate projected balance breaches the safety buffer) and maximizes goal progress within that constraint. Acceptance records are IDEMPOTENT, keyed on source_event_id (Constitution IV; platform-decisions §4). All money fields are integer minor units (cents). Provided to Bills, Cash Safety, Shopping, and Tasks.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schedule_id", "profile_id", "source_event_id", "period_start", "period_end", "feasibility", "steps", "freshness"],
+  "properties": {
+    "schedule_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid", "description": "Owning profile; cross-profile acceptance is authZ-checked server-side on session identity, never on this client-supplied value (threat model)." },
+    "source_event_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Idempotency key for the acceptance/publication. A replayed acceptance with the same source_event_id MUST NOT double-record steps or re-publish (UNIQUE constraint; Constitution IV)."
+    },
+    "period_start": { "type": "string", "format": "date", "description": "Sequencing period start (typically the user's statement/calendar month)." },
+    "period_end": { "type": "string", "format": "date" },
+    "feasibility": {
+      "type": "string",
+      "enum": ["feasible", "infeasible"],
+      "description": "feasible = an overdraft-free ordering exists and is in steps. infeasible = no overdraft-free ordering exists; steps holds the best attainable order, shortfall is populated, and deferral_recommendations is non-empty (FR-PAY-002). An infeasible result is NEVER presented as feasible (SC-P-004)."
+    },
+    "projected_lowest_balance": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Lowest projected balance over the period under this ordering, integer cents. For a feasible schedule this is at or above the safety buffer (carries the basis that produced it, Constitution VI)."
+    },
+    "shortfall": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "description": "Populated iff feasibility = infeasible: the projected breach the user cannot avoid by reordering.",
+      "required": ["shortfall_on", "shortfall_amount"],
+      "properties": {
+        "shortfall_on": { "type": "string", "format": "date", "description": "Date the projected balance first breaches the safety buffer." },
+        "shortfall_amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Amount by which the projection falls short of the buffer at the breach, integer cents." }
+      }
+    },
+    "goal_progress_delta": {
+      "$ref": "finos:common/MoneyCents/1.0.0",
+      "description": "Net CAD advanced toward goals by this ordering versus the naive due-date-only order, integer cents (summed in integer cents; never float)."
+    },
+    "steps": {
+      "type": "array",
+      "minItems": 0,
+      "description": "Ordered payment steps. Order is significant — earlier index = earlier in the sequence. Empty only when no obligations exist for the period.",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step_id", "sequence_index", "obligation_ref", "source_account_id", "amount", "scheduled_date", "status"],
+        "properties": {
+          "step_id": { "type": "string", "format": "uuid" },
+          "sequence_index": { "type": "integer", "minimum": 0, "description": "0-based position in the ordering." },
+          "obligation_ref": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["obligation_id", "kind"],
+            "description": "The obligation this step pays. Sourced from BillCalendar when present, else a user-entered obligation.",
+            "properties": {
+              "obligation_id": { "type": "string" },
+              "kind": { "type": "string", "enum": ["bill", "recurring", "card_statement", "goal_contribution", "user_entered"], "description": "goal_contribution = a discretionary contribution advanced for goal progress." },
+              "source": { "type": "string", "enum": ["bill_calendar", "user_entered"], "default": "bill_calendar", "description": "Provenance of the obligation; user_entered when Bills is not yet connected." }
+            }
+          },
+          "source_account_id": { "type": "string", "format": "uuid", "description": "AccountState account_id funds are proposed to come from. FinOS does not move them — the user executes externally." },
+          "amount": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Payment amount, integer cents." },
+          "scheduled_date": { "type": "string", "format": "date", "description": "Proposed execution date (UTC date; rendered to the user's locale at the edge)." },
+          "projected_balance_after": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Projected balance immediately after this step, integer cents. For a feasible schedule, MUST be at or above the safety buffer (SC-P-004)." },
+          "goal_progress_contribution": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "CAD advanced toward a goal by this step, integer cents; zero for a non-goal step (FR-X-004 time-to-goal context)." },
+          "goal_ref": { "type": ["string", "null"], "format": "uuid", "description": "GoalState goal_id this step advances; null when the step is not goal-affecting." },
+          "status": { "type": "string", "enum": ["proposed", "accepted", "needs_resequence"], "description": "proposed = not yet accepted; accepted = recorded idempotently on the source_event_id; needs_resequence = a later spine refresh made this step overdraft-risky and it MUST be re-sequenced, never silently left to drift (FR-PAY-003)." }
+        }
+      }
+    },
+    "deferral_recommendations": {
+      "type": "array",
+      "description": "Populated iff feasibility = infeasible: obligations ranked by criticality with a recommended defer/renegotiate action (the renegotiation itself is handed to Bills; Pay only recommends).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["obligation_id", "recommended_action", "rationale_en", "rationale_fr"],
+        "properties": {
+          "obligation_id": { "type": "string" },
+          "recommended_action": { "type": "string", "enum": ["defer", "renegotiate", "split"] },
+          "rationale_en": { "type": "string", "minLength": 1 },
+          "rationale_fr": { "type": "string", "minLength": 1, "description": "A missing fr rationale when an en rationale exists is a bilingual defect (Constitution II)." }
+        }
+      }
+    },
+    "reasoning": {
+      "$ref": "finos:common/Reasoning/1.0.0",
+      "description": "Why this ordering: cites the no-overdraft constraint satisfied and the goal progress achieved, with bilingual rationale (SC-P-003)."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the runway/budget/inflow inputs the sequence was computed on. A stale primary money input WITHHOLDS the sequence rather than emitting one on stale data (Constitution IV/VI/VIII)."
+    }
+  }
+}

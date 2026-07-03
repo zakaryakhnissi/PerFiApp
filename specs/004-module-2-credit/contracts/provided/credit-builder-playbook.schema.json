@@ -1,0 +1,67 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:credit/CreditBuilderPlaybook/1.0.0",
+  "title": "CreditBuilderPlaybook",
+  "description": "A dynamic, Canada-specific credit-builder playbook this module OWNS and PROVIDES (FR-CRD-003): an ordered list of informational, recommend-only steps tailored to the user's current factors (e.g. keep oldest card open, lower utilization before statement, avoid hard inquiries before a planned application, consider a secured card / credit-builder loan where appropriate). Steps are EDUCATIONAL decision support, NOT regulated advice and NEVER an instruction to acquire a specific credit product on commission (Constitution Quality Standards 'not a registered advisor'). No money figure is asserted here unless it is sourced and fresh; steps that depend on a stale money input are withheld, not guessed. Each step is bilingual. Consumers: Credit UI, Household.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["playbook_id", "profile_id", "steps", "freshness"],
+  "properties": {
+    "playbook_id": { "type": "string", "format": "uuid" },
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ enforced server-side against the validated session identity — never a client-supplied profile_id."
+    },
+    "credit_stage": {
+      "type": "string",
+      "enum": ["building", "establishing", "optimizing", "recovering", "unknown"],
+      "default": "unknown",
+      "description": "Coarse stage that shapes which steps apply (e.g. 'building' = thin/new file; 'recovering' = past derogatory marks). 'unknown' when bureau data is absent."
+    },
+    "steps": {
+      "type": "array",
+      "description": "Ordered playbook steps, highest-impact first. May be empty when no bureau data is connected (consumers show the Connect/Empty state).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["step_code", "informational_only", "title_en", "title_fr", "detail_en", "detail_fr"],
+        "properties": {
+          "step_code": {
+            "type": "string",
+            "enum": ["lower_utilization", "keep_oldest_open", "on_time_payment_streak", "limit_hard_inquiries", "diversify_credit_mix", "consider_secured_card", "consider_credit_builder_loan", "dispute_report_error", "age_accounts"],
+            "description": "Normalized playbook step. 'consider_*' steps are informational education, never a commissioned product push."
+          },
+          "informational_only": {
+            "type": "boolean",
+            "const": true,
+            "description": "MUST be true. The playbook is decision support, not regulated advice (Constitution Quality Standards)."
+          },
+          "priority_rank": {
+            "type": "integer",
+            "minimum": 1,
+            "description": "1 = highest-impact step for this user's current factors."
+          },
+          "estimated_score_impact": {
+            "type": ["string", "null"],
+            "enum": ["high", "medium", "low", null],
+            "description": "Qualitative expected impact; null when not estimable. Never a fabricated precise point figure."
+          },
+          "depends_on_money_input": {
+            "type": "boolean",
+            "default": false,
+            "description": "true iff this step's specificity depends on a money input (e.g. a concrete pay-down amount). When true and the input is stale/missing, the step is presented generically (no number) or withheld — never with a guessed figure."
+          },
+          "title_en": { "type": "string", "minLength": 1 },
+          "title_fr": { "type": "string", "minLength": 1, "description": "French title (fr-CA). Missing fr is a bilingual defect (Constitution II)." },
+          "detail_en": { "type": "string", "minLength": 1 },
+          "detail_fr": { "type": "string", "minLength": 1, "description": "French detail (fr-CA)." }
+        }
+      }
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Freshness of the bureau/factor inputs the playbook was tailored from. Stale ⇒ money-dependent step specifics are flagged/withheld (Constitution VIII)."
+    }
+  }
+}

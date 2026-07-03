@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/ConnectionConsent/1.0.0",
+  "title": "ConnectionConsent",
+  "description": "An AggregationLink: a single household member's independent consent grant + connection to one institution via the swappable aggregation provider (FR-CORE-006/007). Provided by Module 0 so consumers (Household, Home/onboarding, Settings) can render connection status, consent scope, and revocation WITHOUT ever touching the underlying token. The aggregation access TOKEN IS NOT, and MUST NOT be, part of this contract — tokens live only in the KMS-backed secrets store (FR-CORE-007, platform-decisions §5). This object carries only non-secret link metadata.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["link_id", "profile_id", "institution_id", "institution_name", "consent_status", "consent_scopes", "granted_at", "freshness"],
+  "properties": {
+    "link_id": { "type": "string", "format": "uuid", "description": "Stable id for this member's link to this institution. One link = one member + one institution + one independent token (never shared between household members — FR-CORE-007)." },
+    "profile_id": { "type": "string", "format": "uuid", "description": "The household member who granted this consent under their own identity. Each member holds an INDEPENDENT grant; partial revocation operates on a single link_id." },
+    "household_id": { "type": ["string", "null"], "format": "uuid" },
+    "institution_id": { "type": "string", "minLength": 1 },
+    "institution_name": { "type": "string", "minLength": 1 },
+    "provider": { "type": "string", "minLength": 1, "default": "plaid", "description": "Aggregation provider behind SpineAggregationPort. Swappable; consumers never depend on provider-specific fields (FR-CORE-006)." },
+    "consent_status": {
+      "type": "string",
+      "enum": ["pending", "active", "login_required", "reauth_required", "revoked", "expired", "error"],
+      "description": "active = healthy; login_required/reauth_required drive the repair UX (MFA-gated re-auth, FR-X-017); revoked/expired retain no live token. NEVER infers a token value."
+    },
+    "consent_scopes": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "enum": ["accounts", "balances", "transactions", "identity", "liabilities"] },
+      "description": "Least-privilege data scopes the user explicitly granted (Constitution V). The product reads only within granted scopes."
+    },
+    "granted_at": { "type": "string", "format": "date-time", "description": "UTC instant consent was granted (audited)." },
+    "last_synced_at": { "type": ["string", "null"], "format": "date-time" },
+    "reauth_required_reason": { "type": ["string", "null"], "enum": ["login_expired", "consent_expired", "scope_change", "suspected_compromise", "rotation", null], "description": "Why a re-auth is needed (distinct from consent_status: this is the REASON, not the lifecycle state). login_expired here = the provider login lapsed and a fresh login is needed; it is named differently from the consent_status value `login_required` (the lifecycle state) to avoid conflation. suspected_compromise is set by the rotation triggers in the threat model (password/passkey reset, refresh-token reuse, admin-initiated, provider-signaled). Re-issuing/re-authorizing a token requires step-up MFA (FR-X-017)." },
+    "revocation": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "properties": {
+        "revoked_at": { "type": "string", "format": "date-time" },
+        "revoked_by": { "type": "string", "enum": ["user", "household_admin_partial", "system_rotation", "deletion_request"], "description": "household_admin_partial = partial revocation when a member leaves; invalidates only this link's token, never others' (FR-CORE-007)." },
+        "token_destroyed": { "type": "boolean", "description": "true once the secrets-store token for this link is destroyed (crypto-shred); the contract exposes only this boolean fact, never the token." }
+      },
+      "description": "Present once revoked. Revocation cascades to the aggregation provider within the 7-day deletion SLA (FR-X-013)."
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the link/connection status itself." }
+  }
+}

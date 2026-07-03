@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:spine/AccountState/1.0.0",
+  "title": "AccountState",
+  "description": "The canonical set of a profile's connected financial accounts with balances, sourced via the swappable aggregation provider behind SpineAggregationPort (FR-CORE-001/006). Provided by Module 0 to ALL modules. Money fields are integer minor units (MoneyCents); every account carries a FreshnessStamp. Balances are MONEY inputs: a stale balance MUST cause dependent recommendations to withhold (Constitution IV/VIII).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["profile_id", "accounts", "freshness"],
+  "properties": {
+    "profile_id": {
+      "type": "string",
+      "format": "uuid",
+      "description": "Owning profile. AuthZ is enforced server-side against the validated session identity — never a client-supplied profile_id (FR-X-010 / FR-CORE-007, threat model IDOR; household visibility further gated by MemberScope per FR-HH-001)."
+    },
+    "household_id": {
+      "type": ["string", "null"],
+      "format": "uuid",
+      "description": "Household this profile belongs to, if any. Cross-member visibility is gated by MemberScope; raw accounts are never exposed outside the owner's granted scope."
+    },
+    "connection_completeness": {
+      "type": "string",
+      "enum": ["complete", "partial", "none"],
+      "description": "complete = all of the user's known institutions connected; partial = some connected (consumers MUST surface an incomplete-data marker); none = no accounts (consumers show the Empty state, never zero-filled money)."
+    },
+    "accounts": {
+      "type": "array",
+      "description": "May be empty (connection_completeness = none).",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["account_id", "institution_id", "institution_name", "type", "currency", "balance", "balance_kind", "ingestion_mode", "status", "freshness"],
+        "properties": {
+          "account_id": { "type": "string", "format": "uuid", "description": "Stable FinOS account id (not the aggregation provider's raw id)." },
+          "aggregation_link_id": { "type": ["string", "null"], "format": "uuid", "description": "The ConnectionConsent/AggregationLink this account was sourced through. Null for manual/statement-import accounts." },
+          "institution_id": { "type": "string", "minLength": 1, "description": "Canonical Canadian institution identifier." },
+          "institution_name": { "type": "string", "minLength": 1 },
+          "type": { "type": "string", "enum": ["chequing", "savings", "credit_card", "line_of_credit", "loan", "investment", "other"] },
+          "mask": { "type": ["string", "null"], "description": "Last 2–4 digits only; never the full account number." },
+          "currency": { "type": "string", "pattern": "^[A-Z]{3}$", "default": "CAD" },
+          "balance": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Current balance in integer cents. For credit_card/line_of_credit this is the amount owed (negative = owed when normalized; see balance_kind)." },
+          "available_balance": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Optional available balance (e.g. after holds, or remaining credit). Integer cents." },
+          "credit_limit": { "$ref": "finos:common/MoneyCents/1.0.0", "description": "Present for credit_card/line_of_credit; feeds CreditState utilization. Integer cents." },
+          "balance_kind": { "type": "string", "enum": ["asset", "liability"], "description": "asset for deposit accounts; liability for credit/loan accounts. Lets consumers sum net position without sign-guessing." },
+          "ingestion_mode": { "type": "string", "enum": ["aggregated", "manual", "statement_import"], "description": "aggregated = via provider; manual = user-entered; statement_import = parsed from an uploaded statement (institution-unavailable fallback, FR-CORE-006 edge case)." },
+          "status": { "type": "string", "enum": ["active", "login_required", "disconnected", "revoked", "error"], "description": "login_required/error drive the connection-repair UX; disconnected/revoked accounts retain last-known balance marked stale, never shown as current." },
+          "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0" }
+        }
+      }
+    },
+    "freshness": { "$ref": "finos:common/FreshnessStamp/1.0.0", "description": "Freshness of the overall account-state snapshot (oldest member freshness governs)." }
+  }
+}

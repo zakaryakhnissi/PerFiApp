@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "finos:habits/StreakState/1.0.0",
+  "title": "StreakState",
+  "description": "Current and longest streak for a single habit. Provided by Module 8 (Habits) to Social and Inbox. CROSS-USER-SAFE PROJECTION: contains NO monetary value, account name, merchant, or source reference (FR-SOC-001). A streak advances ONLY for a real, completed, non-reversed financial action keyed on a source event id (FR-HAB-001); advances are idempotent and compensated on reversal. This module computes no money.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["habit_id", "profile_id", "action_class", "current_streak", "longest_streak", "freshness"],
+  "properties": {
+    "habit_id": { "type": "string", "format": "uuid" },
+    "profile_id": { "type": "string", "format": "uuid" },
+    "action_class": {
+      "type": "string",
+      "enum": ["roundup_approve", "bill_review", "task_complete", "notification_clear", "daily_ritual"],
+      "description": "The real-action class this habit is tied to. A habit can never be tied to a non-real action (app-open, view)."
+    },
+    "current_streak": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Current consecutive-period streak length. 0 after a reset beyond the grace window."
+    },
+    "longest_streak": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Longest streak ever achieved; MUST be >= current_streak."
+    },
+    "last_qualified_on": {
+      "type": ["string", "null"],
+      "format": "date",
+      "description": "Local-day of the last qualifying real action; null if never qualified."
+    },
+    "in_grace": {
+      "type": "boolean",
+      "default": false,
+      "description": "Derived: within the grace window after the local-day boundary, so the streak is not yet considered broken."
+    },
+    "freshness": {
+      "$ref": "finos:common/FreshnessStamp/1.0.0",
+      "description": "Depends on freshness-stamped consumed completion events; stale ⇒ streak context flagged, never presented as fresh."
+    }
+  }
+}
