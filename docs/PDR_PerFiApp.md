@@ -5,6 +5,23 @@ Prepared for sharing and editing.
 ## Summary
 This document consolidates potential FinOS modules, submodules, competitor patterns, and differentiated opportunities.
 
+## Delivery phases (decided 2026-07-03)
+
+The full module map below is the long-term product vision, **not** the build order.
+Scope is phased so the MVP is a coherent, shippable slice where the integration thesis
+(every recommendation grounded in real budget, cash-flow, and credit state) is strongest:
+
+| Phase | Modules | Rationale |
+|---|---|---|
+| **Phase 1 — MVP core** | Rewards & Loyalty · Credit & Coaching · Bills & Subscriptions | The tightest integration loop: which card to use (rewards) is constrained by utilization and due dates (credit) and by upcoming obligations (bills). Buildable without full bank aggregation; the Canada-first card knowledgebase is the differentiator. |
+| **Phase 2** | Cash Safety & Autopilot · Pay & Payment Optimization · Shopping & Deals | Extends the core loop to forward-looking cash flow and point-of-purchase decisions. Depends on transaction/balance aggregation and the Phase 1 data model. |
+| **Phase 3** | Tasks & To-Dos · Habits & Routines · Inbox & Notifications · Household & Family | Engagement and multi-user layers on top of a proven core. |
+| **Later / exploratory** | Focus & Mental Health · Travel & Trips · Life Admin & Docs · Workspace & Playbooks · Social & Accountability | Adjacent surfaces; revisit once the FinOS core has traction. |
+
+The first feature through the Spec Kit pipeline is the **Card Knowledgebase & Best Card
+Recommender** (Phase 1, Rewards & Loyalty) — chosen because it needs no bank-data
+aggregation and directly exercises the Canada-first, bilingual, exact-money foundations.
+
 ---
 
 # FinOS Expanded Module Table
