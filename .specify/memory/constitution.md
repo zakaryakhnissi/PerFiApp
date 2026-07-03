@@ -1,127 +1,133 @@
 <!--
-SYNC IMPACT REPORT
-
-Version change: 2.1.0 → 2.2.0
-Bump rationale: MINOR — scoped refinement of Principle VI; no principle removed.
-  - Principle VI (Explainable & Auditable): adds a narrow, documented exception
-    permitting a module to substitute a *named, spec-documented default* for a
-    single missing **secondary guardrail** input (one that can only constrain or
-    warn, never originate a money figure) when the primary inputs are present.
-    Missing/stale **money inputs** still MUST withhold. Motivated by Module 1
-    Rewards: when CreditState (utilization guardrail) is absent, the best-card
-    recommender assumes the healthy utilization band and proceeds, rather than
-    withholding the flagship for every user without credit data.
-  - Approved by product owner (smail882) on 2026-06-26 via /speckit-clarify on
-    feature 002-module-1-rewards.
-  - Migration plan: no implementation code exists yet; spec 002 (FR-REW-003) and
-    its plan are updated in the same change, and plan-template.md's Principle VI
-    gate is updated to recognize the documented-default exception.
-
-Version change: 2.0.0 → 2.1.0
-Bump rationale: MINOR — materially expanded guidance, no breaking changes.
-  - Principle II (Canada-First & Bilingual): adds locale-correct formatting
-    (fr-CA `1 234,56 $`) as part of bilingualism; aligns with spec FR-X-005 / SC-008.
-  - Quality Standards → Privacy & Compliance: adds a maximum-retention bound for
-    dormant accounts and a data-residency clause (Canadian-region storage +
-    cross-border-transfer disclosure); aligns with spec FR-X-019 / FR-X-020.
-
-Version change: 1.0.0 → 2.0.0
-Bump rationale: MAJOR — adds new NON-NEGOTIABLE and governance-level principles
-  (Money Is Exact; Security & Least Privilege; Explainable & Auditable; Fresh or
-  Flagged) and redefines the module-boundaries principle to mandate contract tests
-  and semantic versioning. These introduce new mandatory gates, so existing code
-  and specs may now be non-compliant — a backward-incompatible governance change.
-
-Modified principles:
-  - IV. Module Boundaries with Cross-Module Data
-      → VII. Module Boundaries, Contracts & Versioning
-      (now mandates consumer/provider contract tests and semver of contracts/APIs)
-  - V. Simplicity & YAGNI → IX. Simplicity & YAGNI (renumbered, text unchanged)
-
-Added principles:
-  - IV.  Money Is Exact (NON-NEGOTIABLE)
-  - V.   Security & Least Privilege
-  - VI.  Explainable & Auditable
-  - VIII. Fresh or Flagged (External Data Integrity)
-
-Added / expanded sections:
-  - Quality Standards → Privacy & Compliance: expanded to PIPEDA + Quebec Law 25 +
-    Consumer-Driven Banking, data retention/right-to-deletion/export, and a
-    not-a-registered-advisor advice-liability stance.
-  - Quality Standards → Observability: clarified PII/monetary-value redaction and
-    separation of the audit trail from debug logs, for consistency with Principle V.
-
-Removed sections: none.
-
-Templates brought into compliance with v2.2.0 on 2026-06-26 (closes spec FR-X-018 / SC-016):
-  - ✅ .specify/templates/plan-template.md — Constitution Check gate wired to all
-       nine principles + Quality Standards, with NON-NEGOTIABLE markers and a
-       required threat-model link.
-  - ✅ .specify/templates/spec-template.md — mandatory Money Correctness and
-       Security & Privacy Threat Model sections added.
-  - ✅ .specify/templates/tasks-template.md — contract-test (consumer+provider),
-       money-correctness, idempotency, audit-trail, redaction, freshness,
-       threat-model-mitigation, and locale/bilingual task categories added;
-       tests marked mandatory (Principle III).
-
-Follow-up TODOs: none — template-compliance gate satisfied; P1 submodule specs
-  may now be authored.
+Sync Impact Report
+==================
+Version change: 1.0.0 → 1.0.1 (PATCH — wording consistency + completed propagation;
+addresses automated review findings on PR #11)
+Modified principles: none (no semantic changes)
+Added sections: none
+Removed sections: none
+Changes:
+  - Technical Stack & Constraints: i18n resource keys standardized to `en-CA` + `fr-CA`
+    (was `en` + `fr-CA`), matching the locales named in Principle I
+Templates:
+  - ✅ .specify/templates/plan-template.md — Constitution Check gate is constitution-driven; no edit needed
+  - ✅ .specify/templates/spec-template.md — prioritized, independently-testable stories align with Principles IV & V; no edit needed
+  - ✅ .specify/templates/tasks-template.md — propagation completed in full: preamble,
+       the three per-story "Tests for User Story N" headings, and the Mobile Path
+       Conventions row (now apps/mobile/src/, apps/api/src/, packages/<name>/src/)
+  - ✅ .specify/templates/checklist-template.md — generic; no edit needed
+Related (outside .specify/, edited outside this skill as it is not a Spec Kit artifact):
+  - .claude/skills/speckit-tasks/SKILL.md — Task Generation Rules now carry the matching
+    Principle V override (test tasks mandatory, and first, for financial logic)
+Follow-up TODOs: none
 -->
 
-
-# FinOS Constitution
+# PerFiApp Constitution
 
 ## Core Principles
 
-### I. Integration-First
-Every feature must connect to the user's real financial picture. No module works in isolation — every recommendation (use this card, cancel this sub, wait to buy) is evaluated against actual budget, cash-flow, credit state, and goals. A perks suggestion that ignores utilization, or a deal that triggers overspending, is a failure.
+### I. Canada-First, Bilingual by Design
 
-### II. Canada-First & Bilingual
-FinOS is built for Canadian programs, banks, cards, and rules by default. All monetary values are displayed in CAD with time-to-goal context. The UI, notifications, and content are bilingual (EN/FR) throughout — not as an afterthought. Bilingualism includes **locale-correct formatting**: monetary values, percentages, and dates MUST follow the active locale's conventions (e.g. fr-CA renders `1 234,56 $`, not `$1,234.56`); a value formatted with the wrong locale convention is a bilingual defect even when the surrounding labels are translated.
+Every feature MUST ship in English and Canadian French (FR-CA) together. User-facing
+strings MUST use i18n keys from the first commit — hardcoded user-facing text is a merge
+blocker. Canadian programs, banks, regulations, and formats (CAD currency, `en-CA` and
+`fr-CA` locales, Canadian date/number formatting) are the default target; support for
+global programs is an extension of the Canadian baseline, never the other way around.
 
-### III. Test-First (NON-NEGOTIABLE)
-TDD mandatory: tests written → user approved → tests fail → implement. Red-Green-Refactor strictly enforced. No feature ships without tests covering the happy path and the key edge cases specific to Canadian banking rules, bilingual content, and multi-module data dependencies.
+**Rationale**: Canada-first + bilingual is PerFiApp's core market differentiation. Retrofitting
+i18n or Canadian rules after the fact is consistently more expensive than building them in.
 
-### IV. Money Is Exact (NON-NEGOTIABLE)
-All monetary values MUST use integer minor units (cents) or arbitrary-precision decimal — never binary floating point. Rounding rules MUST be explicit, documented, and unit-tested. Every financial calculation MUST be pure, deterministic, and verified against known fixtures, including Canadian tax, fee, and interest edge cases. Any state FinOS writes on the user's behalf (roundup ledgers, scheduled reminders, goal progress) MUST be idempotent and safe to retry. FinOS recommends actions only — it MUST NOT execute money movement on the user's behalf; every money action is surfaced for explicit, per-action user execution. Rationale: floating-point money and non-deterministic math are the most common and most damaging fintech defects.
+### II. Money Is Exact (NON-NEGOTIABLE)
 
-### V. Security & Least Privilege
-Financial data and PII MUST be encrypted in transit (TLS) and at rest. Bank-aggregation tokens, OAuth credentials, and secrets MUST NEVER be stored in plaintext, committed to the repository, or written to logs, and MUST be rotatable. Authentication and authorization MUST be enforced on every cross-user boundary, including Household & Family roles and permissions. Any feature that touches credentials, aggregation tokens, or another person's financial data MUST include a threat model in its spec. Access defaults to least privilege. Rationale: an aggregator concentrates a user's entire financial life — a single leak is catastrophic.
+All monetary amounts MUST be stored and computed as integer minor units (cents) with an
+explicit currency code. Floating-point types are forbidden in any money computation,
+storage, or transport format. Rounding rules MUST be explicit at every division or
+percentage step and MUST be covered by tests. Every change that touches money math MUST
+include tests covering rounding and edge cases (zero, negative, minimum/maximum, and
+cross-currency where applicable).
 
-### VI. Explainable & Auditable
-Every recommendation MUST carry the inputs and reasoning that produced it ("why this card", "why wait to buy") so it can be shown to the user and reproduced during debugging. Every action the user confirms and every change to financial state MUST be recorded in an immutable, append-only audit trail. When inputs are missing, stale, or conflicting, the fail-safe default is to withhold the recommendation and ask — never guess. **Documented-default exception (v2.2.0):** a module MAY substitute a *named, spec-documented default* for a single missing **secondary guardrail** input — one that can only constrain or warn a recommendation, never originate a money figure — when the primary recommendation inputs are present and the default is recorded in the feature spec. This documented-default path is distinct from guessing a user-specific value and does not require a user-facing flag; missing or stale **money inputs** (balances, amounts, valuations, rates) MUST still withhold. Rationale: a finance assistant earns trust only when its advice is transparent and traceable; a named, auditable default for a non-money guardrail keeps a flagship usable without compromising money correctness.
+**Rationale**: PerFiApp's entire value proposition is trustworthy financial recommendations;
+a single float-rounding bug destroys that trust and can cause real financial harm.
 
-### VII. Module Boundaries, Contracts & Versioning
-Each module tab (Rewards, Credit, Cash Safety, Bills, etc.) owns its domain and exposes a clean API to other modules. Cross-module intelligence (e.g. a best-card recommendation that checks budget AND credit utilization) MUST flow through explicit, schema-defined data contracts — never shared mutable state. Every contract MUST have consumer and provider contract tests that run in CI. Contracts and public APIs MUST follow semantic versioning; breaking changes require a version bump, a migration plan, and a deprecation window. Rationale: cross-module recommendations are only as reliable as the contracts they depend on.
+### III. Privacy & Security First
 
-### VIII. Fresh or Flagged
-Every value sourced from an external feed (bank balances, credit data, FX rates, deals) MUST carry a freshness timestamp. Recommendations computed on stale data MUST be flagged or withheld — e.g. no runway calculation on a multi-day-old balance. External-source failures MUST degrade gracefully and MUST NOT produce incorrect money advice; timeouts, retries, and rate-limit handling are mandatory on all ingestion paths. Rationale: confident advice from stale data is worse than no advice.
+Financial data MUST be handled to a PIPEDA-grade standard: least-privilege access,
+data minimization, and explicit purpose for every piece of personal data collected. No
+secrets, tokens, or credentials in the repository — ever. No real financial or personal
+data in tests, fixtures, or documentation. Changes touching authentication, data storage,
+APIs, or financial data flows MUST receive a security-reviewer pass before merge.
 
-### IX. Simplicity & YAGNI
-Start simple. Every piece of complexity must be justified by a real user need. No pre-emptive abstractions. Three similar cases before extracting a helper. Features ship at MVP scope; no gold-plating.
+**Rationale**: PerFiApp aggregates the most sensitive data a person has. Privacy failures
+are unrecoverable reputationally and carry regulatory consequences in Canada.
 
-## Quality Standards
+### IV. Spec-Driven Development
 
-- **Observability**: Structured logging required on all data ingestion, sync, and recommendation paths. Logs MUST redact PII and monetary values; the immutable audit trail (Principle VI) is kept separate from debug logs. Text I/O ensures debuggability.
-- **Privacy & Compliance**: No financial data leaves the device or service boundary without explicit user consent. Canadian financial data is handled under PIPEDA and Quebec's Law 25; data aggregation follows Canada's Consumer-Driven Banking (open banking) standards. Users have the right to export and delete their data, and retention is limited to what each feature genuinely needs — including a maximum retention bound for dormant accounts, not only deletion-on-request. **Data residency**: Canadian users' financial data and PII are stored and processed on Canadian-region infrastructure; any cross-border transfer or processing MUST be explicitly disclosed and covered by an accountability/transfer agreement (PIPEDA accountability for cross-border transfers), and all subprocessors MUST satisfy this constraint. FinOS provides informational decision support only and is not a registered financial advisor; recommendations are not regulated financial advice.
-- **Performance**: Cold-start and module-switch under 300 ms on mid-range Canadian devices.
-- **Accessibility**: WCAG 2.1 AA minimum; bilingual screen-reader labels required.
+Features MUST flow through the Spec Kit pipeline: constitution → `/speckit-specify` →
+`/speckit-clarify` → `/speckit-plan` → `/speckit-tasks` → `/speckit-implement`. No
+implementation work begins before an approved spec and plan exist. The artifacts under
+`.specify/` and `specs/` are the source of truth for what is being built and why;
+disagreements are resolved by amending the spec, not by diverging code.
 
-## Development Workflow
+**Rationale**: A 16-module product vision built by an AI-agent team needs a single
+authoritative pipeline to prevent scope drift and keep humans in control of intent.
 
-- Specs written in `.specify/` before any implementation begins.
-- All PRs verified against this constitution before merge.
-- Breaking changes to data contracts follow Principle VII (version bump + migration plan + deprecation window).
-- Features touching credentials, aggregation tokens, or cross-user financial data include a threat model (Principle V).
-- Complexity must be justified in the PR description. Unexplained complexity is grounds for rejection.
+### V. Test-First for Financial Logic
+
+Money math, credit calculations, and recommendation logic MUST be developed
+test-first: tests are written and observed failing before implementation (Red-Green-Refactor).
+UI and glue code MUST have meaningful coverage of behavior but are not held to strict TDD.
+Test tasks for financial logic are mandatory in every `/speckit-tasks` output that touches it.
+
+**Rationale**: Financial correctness is the product. TDD on the financial core gives
+executable proof of correctness where it matters most, without slowing down UI iteration.
+
+## Technical Stack & Constraints
+
+The approved stack for the mobile-first MVP:
+
+- **Mobile app**: React Native + Expo, TypeScript with `strict` mode enabled.
+- **Backend**: Node.js + TypeScript, NestJS, PostgreSQL.
+- **Monorepo**: pnpm workspaces — `apps/mobile`, `apps/api`, and `packages/*` for shared
+  code, including the money primitives (integer minor units) and i18n primitives shared
+  across app and API.
+- **i18n**: i18next (react-i18next + expo-localization). Both `en-CA` and `fr-CA`
+  resource files MUST be complete for a feature to merge.
+
+Changing this stack (language, framework, database, or monorepo layout) REQUIRES a
+constitution amendment. Per-feature technical detail (libraries, schemas, API shapes) is
+decided in that feature's `/speckit-plan` and does not require an amendment.
+
+## Development Workflow & Git Practices
+
+- **Branch naming**: Spec Kit feature branches use `NNN-feature-name` (created by
+  `/speckit-specify`). All other work uses `type/short-description` with these types:
+  `feature/`, `fix/`, `docs/`, `ci/`, `security/`, `research/`, `improve/`.
+- **Commits**: Conventional Commits are required (`feat:`, `fix:`, `docs:`, `ci:`,
+  `security:`, `refactor:`, `test:`, `chore:`), written in the imperative mood and scoped
+  where useful (e.g., `feat(rewards): …`), consistent with existing repository history.
+- **No direct pushes to `main`**: all changes land via pull request.
+- **PR review**: the automated review (`code-reviewer` + `security-reviewer` via
+  `.github/workflows/pr-review.yml`) is advisory, but every finding MUST be either
+  addressed or explicitly dismissed with a reason in the PR thread.
+- **PR scope**: PRs SHOULD be small and single-purpose. A PR that changes the
+  constitution, specs, or plans under `.specify/` also receives the `spec-lead-reviewer`
+  pass.
 
 ## Governance
 
-This constitution supersedes all other practices. Amendments require a written rationale, approval from the product owner, and a migration plan for existing code.
+This constitution supersedes all other practices in this repository. Where a document,
+agent instruction, or habit conflicts with it, the constitution wins until amended.
 
-Versioning of this constitution follows semantic versioning: MAJOR for backward-incompatible governance or principle removals/redefinitions, MINOR for new principles or materially expanded guidance, PATCH for clarifications and wording.
+- **Amendments**: made via pull request modifying `.specify/memory/constitution.md`,
+  including a rationale, and reviewed like any other change (including the
+  `spec-lead-reviewer` pass).
+- **Versioning**: the constitution follows semantic versioning — MAJOR for principle
+  removals or redefinitions, MINOR for new principles or materially expanded sections,
+  PATCH for wording and clarifications.
+- **Compliance**: adherence is checked at the `/speckit-plan` Constitution Check gate and
+  during `/speckit-analyze`; violations must be justified in the plan's Complexity
+  Tracking table or resolved before implementation.
+- **Runtime guidance**: `CLAUDE.md` provides day-to-day operating guidance for agents and
+  MUST stay consistent with this constitution.
 
-All PRs and reviews must verify compliance with these principles. Use [CLAUDE.md](../../CLAUDE.md) for runtime development guidance.
-
-**Version**: 2.2.0 | **Ratified**: 2026-06-10 | **Last Amended**: 2026-06-26
-**Approved by**: smail882 (product owner) — v2.0.0 on 2026-06-24, v2.1.0 on 2026-06-25, v2.2.0 on 2026-06-26
+**Version**: 1.0.1 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
