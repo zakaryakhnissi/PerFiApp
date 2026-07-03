@@ -73,7 +73,8 @@ The section below is maintained automatically by the agent-context extension
 (`/speckit-agent-context-update`) — do not edit it by hand.
 
 <!-- SPECKIT START -->
-For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan
-(none yet — the first feature has not entered the Spec Kit pipeline).
+Active feature: 001-card-knowledgebase (Card Knowledgebase & Best Card Recommender).
+For technologies, project structure, shell commands, and design decisions, read the
+current plan at `specs/001-card-knowledgebase/plan.md` (with `research.md`,
+`data-model.md`, `contracts/`, and `quickstart.md` alongside it).
 <!-- SPECKIT END -->
