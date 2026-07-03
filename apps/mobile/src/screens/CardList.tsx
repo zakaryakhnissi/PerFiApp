@@ -3,16 +3,18 @@
  * (no annual fee, bonus category). Filters run against the on-device cache.
  */
 import React, { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { Card, KnowledgebaseSnapshot, SpendCategoryId } from '@perfiapp/kb-schema';
+import type { Card as KbCard, KnowledgebaseSnapshot, SpendCategoryId } from '@perfiapp/kb-schema';
 import { currentLocale } from '../i18n';
 import { formatCents, pickText } from '../format';
 import { getSnapshot } from '../store/kb';
 import { CardDetailScreen } from './CardDetail';
+import { Badge, Card, Chip, ChipRow, FieldLabel, Input, ScreenTitle } from '../ui/components';
+import { space, type_ } from '../ui/theme';
 
 export function matchesFilters(
-  card: Card,
+  card: KbCard,
   locale: 'en-CA' | 'fr-CA',
   query: string,
   noFeeOnly: boolean,
@@ -58,8 +60,8 @@ export function CardListScreen(): React.JSX.Element {
 
   if (!snapshot) {
     return (
-      <View>
-        <Text>{t('common.loading')}</Text>
+      <View style={styles.loading}>
+        <Text style={type_.small}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -74,47 +76,67 @@ export function CardListScreen(): React.JSX.Element {
   }
 
   return (
-    <ScrollView>
-      <Text accessibilityRole="header">{t('kb.title')}</Text>
-      <TextInput
+    <ScrollView contentContainerStyle={styles.container}>
+      <ScreenTitle>{t('kb.title')}</ScreenTitle>
+      <Input
         accessibilityLabel={t('kb.searchPlaceholder')}
         placeholder={t('kb.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
       />
-      <Pressable
-        accessibilityRole="switch"
-        accessibilityState={{ checked: noFeeOnly }}
-        onPress={() => setNoFeeOnly((v) => !v)}
-      >
-        <Text>{t('kb.filterNoFee')}</Text>
-      </Pressable>
-      <Text>{t('kb.filterBonusCategory')}</Text>
-      <View>
-        {snapshot.categories.map((category) => (
-          <Pressable
-            key={category.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: bonusCategory === category.id }}
-            onPress={() => setBonusCategory((v) => (v === category.id ? null : category.id))}
-          >
-            <Text>{pickText(category.label, locale)}</Text>
-          </Pressable>
-        ))}
+      <View style={{ marginTop: space.md }}>
+        <ChipRow>
+          <Chip
+            role="switch"
+            label={t('kb.filterNoFee')}
+            selected={noFeeOnly}
+            onPress={() => setNoFeeOnly((v) => !v)}
+          />
+        </ChipRow>
       </View>
+      <FieldLabel>{t('kb.filterBonusCategory')}</FieldLabel>
+      <ChipRow>
+        {snapshot.categories.map((category) => (
+          <Chip
+            key={category.id}
+            label={pickText(category.label, locale)}
+            selected={bonusCategory === category.id}
+            onPress={() => setBonusCategory((v) => (v === category.id ? null : category.id))}
+          />
+        ))}
+      </ChipRow>
 
-      {filtered.length === 0 ? <Text>{t('kb.empty')}</Text> : null}
+      <View style={{ height: space.xl }} />
+      {filtered.length === 0 ? <Text style={type_.small}>{t('kb.empty')}</Text> : null}
       {filtered.map((card) => (
         <Pressable key={card.id} accessibilityRole="button" onPress={() => setOpenCardId(card.id)}>
-          <Text>{pickText(card.name, locale)}</Text>
-          <Text>{pickText(card.issuer, locale)}</Text>
-          <Text>
-            {card.annualFee.amountCents === 0
-              ? t('kb.noFee')
-              : `${t('kb.annualFee')}: ${formatCents(card.annualFee.amountCents, locale)}`}
-          </Text>
+          <Card>
+            <View style={styles.row}>
+              <View style={{ flex: 1, paddingRight: space.sm }}>
+                <Text style={type_.section}>{pickText(card.name, locale)}</Text>
+                <Text style={[type_.small, { marginBottom: space.sm }]}>
+                  {pickText(card.issuer, locale)}
+                </Text>
+                {card.annualFee.amountCents === 0 ? (
+                  <Badge label={t('kb.noFee')} tone="success" />
+                ) : (
+                  <Badge
+                    label={`${t('kb.annualFee')}: ${formatCents(card.annualFee.amountCents, locale)}`}
+                  />
+                )}
+              </View>
+              <Text style={styles.chevron}>›</Text>
+            </View>
+          </Card>
         </Pressable>
       ))}
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: space.lg, paddingBottom: space.xl * 2 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+  chevron: { fontSize: 24, color: '#98A2B3', paddingLeft: space.sm },
+});

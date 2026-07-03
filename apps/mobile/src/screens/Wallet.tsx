@@ -3,13 +3,15 @@
  * and surface cards no longer listed in the current snapshot.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { KnowledgebaseSnapshot, Wallet } from '@perfiapp/kb-schema';
 import { currentLocale } from '../i18n';
 import { pickText } from '../format';
 import { findCard, getSnapshot } from '../store/kb';
 import { addCard, getWallet, removeCard } from '../store/wallet';
+import { Card, FieldLabel, GhostButton, Input, ScreenTitle } from '../ui/components';
+import { color, space, type_ } from '../ui/theme';
 
 export function WalletScreen(): React.JSX.Element {
   const { t } = useTranslation();
@@ -32,8 +34,8 @@ export function WalletScreen(): React.JSX.Element {
 
   if (!snapshot || !wallet) {
     return (
-      <View>
-        <Text>{t('common.loading')}</Text>
+      <View style={styles.loading}>
+        <Text style={type_.small}>{t('common.loading')}</Text>
       </View>
     );
   }
@@ -53,36 +55,62 @@ export function WalletScreen(): React.JSX.Element {
           .slice(0, 8);
 
   return (
-    <ScrollView>
-      <Text accessibilityRole="header">{t('wallet.title')}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <ScreenTitle>{t('wallet.title')}</ScreenTitle>
 
-      {wallet.cardIds.length === 0 ? <Text>{t('wallet.empty')}</Text> : null}
+      {wallet.cardIds.length === 0 ? (
+        <Card>
+          <Text style={type_.small}>{t('wallet.empty')}</Text>
+        </Card>
+      ) : null}
       {wallet.cardIds.map((cardId) => {
         const card = findCard(snapshot, cardId);
         return (
-          <View key={cardId}>
-            <Text>{card ? pickText(card.name, locale) : `${cardId} — ${t('wallet.missingCard')}`}</Text>
-            <Pressable accessibilityRole="button" onPress={() => void onRemove(cardId)}>
-              <Text>{t('wallet.remove')}</Text>
-            </Pressable>
-          </View>
+          <Card key={cardId}>
+            <View style={styles.row}>
+              <View style={{ flex: 1, paddingRight: space.sm }}>
+                {card ? (
+                  <>
+                    <Text style={type_.section}>{pickText(card.name, locale)}</Text>
+                    <Text style={type_.small}>{pickText(card.issuer, locale)}</Text>
+                  </>
+                ) : (
+                  <Text style={[type_.body, { color: color.warnInk }]}>
+                    {cardId} — {t('wallet.missingCard')}
+                  </Text>
+                )}
+              </View>
+              <GhostButton destructive label={t('wallet.remove')} onPress={() => void onRemove(cardId)} />
+            </View>
+          </Card>
         );
       })}
 
-      <TextInput
+      <FieldLabel>{t('kb.searchPlaceholder')}</FieldLabel>
+      <Input
         accessibilityLabel={t('kb.searchPlaceholder')}
         placeholder={t('kb.searchPlaceholder')}
         value={query}
         onChangeText={setQuery}
       />
+      <View style={{ height: space.md }} />
       {candidates.map((card) => (
-        <View key={card.id}>
-          <Text>{pickText(card.name, locale)}</Text>
-          <Pressable accessibilityRole="button" onPress={() => void onAdd(card.id)}>
-            <Text>{t('wallet.add')}</Text>
-          </Pressable>
-        </View>
+        <Card key={card.id}>
+          <View style={styles.row}>
+            <View style={{ flex: 1, paddingRight: space.sm }}>
+              <Text style={type_.section}>{pickText(card.name, locale)}</Text>
+              <Text style={type_.small}>{pickText(card.issuer, locale)}</Text>
+            </View>
+            <GhostButton label={t('wallet.add')} onPress={() => void onAdd(card.id)} />
+          </View>
+        </Card>
       ))}
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: space.lg, paddingBottom: space.xl * 2 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  row: { flexDirection: 'row', alignItems: 'center' },
+});

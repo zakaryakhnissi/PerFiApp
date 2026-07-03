@@ -53,4 +53,12 @@ export default tseslint.config(
       ],
     },
   },
+  {
+    // Design tokens and presentational components legitimately use fractional
+    // values (letterSpacing, opacity). They contain no money math.
+    files: ["apps/mobile/src/ui/**"],
+    rules: {
+      "no-restricted-syntax": "off",
+    },
+  },
 );

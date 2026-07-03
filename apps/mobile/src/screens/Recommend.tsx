@@ -3,15 +3,17 @@
  * optional amount, ranked results with transparent localized math.
  */
 import React, { useCallback, useEffect, useState } from 'react';
-import { Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { KnowledgebaseSnapshot, SpendCategoryId } from '@perfiapp/kb-schema';
 import type { RankResult } from '@perfiapp/recommender';
 import { currentLocale } from '../i18n';
-import { categoryLabel, formatCents, parseAmountToCents, pickText } from '../format';
+import { formatCents, parseAmountToCents, pickText } from '../format';
 import { getSnapshot } from '../store/kb';
 import { recommend } from '../store/recommend';
 import { renderExplanation } from './explanation';
+import { Badge, Card, Chip, ChipRow, FieldLabel, Input, Notice, PrimaryButton, ScreenTitle } from '../ui/components';
+import { color, space, type_ } from '../ui/theme';
 
 interface Props {
   onGoToWallet: () => void;
@@ -50,85 +52,112 @@ export function RecommendScreen({ onGoToWallet }: Props): React.JSX.Element {
 
   if (!snapshot) {
     return (
-      <View>
-        <Text>{t('common.loading')}</Text>
+      <View style={styles.loading}>
+        <Text style={type_.small}>{t('common.loading')}</Text>
       </View>
     );
   }
 
   return (
-    <ScrollView>
-      <Text accessibilityRole="header">{t('recommend.title')}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <ScreenTitle>{t('recommend.title')}</ScreenTitle>
 
-      <Text>{t('recommend.categoryLabel')}</Text>
-      <View>
+      <FieldLabel>{t('recommend.categoryLabel')}</FieldLabel>
+      <ChipRow>
         {snapshot.categories.map((category) => (
-          <Pressable
+          <Chip
             key={category.id}
-            accessibilityRole="button"
-            accessibilityState={{ selected: category.id === categoryId }}
+            label={pickText(category.label, locale)}
+            selected={category.id === categoryId}
             onPress={() => setCategoryId(category.id)}
-          >
-            <Text>{pickText(category.label, locale)}</Text>
-          </Pressable>
+          />
         ))}
-      </View>
+      </ChipRow>
 
-      <Text>{t('recommend.amountLabel')}</Text>
-      <TextInput
+      <FieldLabel>{t('recommend.amountLabel')}</FieldLabel>
+      <Input
         accessibilityLabel={t('recommend.amountLabel')}
         placeholder={t('recommend.amountPlaceholder')}
         value={amountText}
         onChangeText={setAmountText}
         keyboardType="decimal-pad"
       />
-      {amountError ? <Text>{t('recommend.invalidAmount')}</Text> : null}
+      {amountError ? <Text style={styles.error}>{t('recommend.invalidAmount')}</Text> : null}
 
-      <Pressable accessibilityRole="button" onPress={() => void onRecommend()}>
-        <Text>{t('recommend.cta')}</Text>
-      </Pressable>
+      <PrimaryButton label={t('recommend.cta')} onPress={() => void onRecommend()} />
 
       {outcome.kind === 'empty-wallet' ? (
-        <View>
-          <Text>{t('recommend.emptyWalletTitle')}</Text>
-          <Text>{t('recommend.emptyWalletBody')}</Text>
-          <Pressable accessibilityRole="button" onPress={onGoToWallet}>
-            <Text>{t('recommend.emptyWalletCta')}</Text>
-          </Pressable>
-        </View>
+        <Card style={styles.emptyCard}>
+          <Text style={[type_.section, { marginBottom: space.xs }]}>
+            {t('recommend.emptyWalletTitle')}
+          </Text>
+          <Text style={[type_.small, { marginBottom: space.md }]}>
+            {t('recommend.emptyWalletBody')}
+          </Text>
+          <PrimaryButton label={t('recommend.emptyWalletCta')} onPress={onGoToWallet} />
+        </Card>
       ) : null}
 
       {outcome.kind === 'ranked' ? (
-        <View>
-          {outcome.result.usedPerHundredBasis ? <Text>{t('recommend.perHundredBasis')}</Text> : null}
-          {outcome.result.ranked.every((r) => r.appliedRate.kind === 'base') ? (
-            <Text>{t('recommend.baseRateNotice')}</Text>
+        <View style={{ marginTop: space.xl }}>
+          {outcome.result.usedPerHundredBasis ? (
+            <Notice>{t('recommend.perHundredBasis')}</Notice>
           ) : null}
+          {outcome.result.ranked.every((r) => r.appliedRate.kind === 'base') ? (
+            <Notice tone="warn">{t('recommend.baseRateNotice')}</Notice>
+          ) : null}
+          <View style={{ height: space.md }} />
           {outcome.result.ranked.map((entry, index) => {
             const card = snapshot.cards.find((c) => c.id === entry.cardId);
             if (!card) return null;
+            const best = index === 0;
             return (
-              <View key={entry.cardId} testID={`ranked-${index}`}>
-                {index === 0 ? <Text>{t('recommend.bestPick')}</Text> : null}
-                <Text>{pickText(card.name, locale)}</Text>
-                <Text>
+              <Card
+                key={entry.cardId}
+                testID={`ranked-${index}`}
+                style={best ? styles.bestCard : undefined}
+              >
+                <View style={styles.resultHeader}>
+                  <View style={{ flex: 1, paddingRight: space.sm }}>
+                    {best ? (
+                      <View style={{ marginBottom: space.sm }}>
+                        <Badge label={t('recommend.bestPick')} tone="primary" />
+                      </View>
+                    ) : null}
+                    <Text style={type_.section}>{pickText(card.name, locale)}</Text>
+                    <Text style={type_.small}>{pickText(card.issuer, locale)}</Text>
+                  </View>
+                  <Text style={styles.rank}>#{index + 1}</Text>
+                </View>
+                <Text style={[type_.value, { marginVertical: space.sm }]}>
                   {t('recommend.expectedValue', {
                     value: formatCents(entry.expectedValue.amountCents, locale),
                   })}
                 </Text>
                 {renderExplanation(entry.explanation, t, locale, snapshot).map((line) => (
-                  <Text key={line}>{line}</Text>
+                  <Text key={line} style={[type_.small, styles.explanationLine]}>
+                    {line}
+                  </Text>
                 ))}
-              </View>
+              </Card>
             );
           })}
           {outcome.result.missingCardIds.length > 0 ? (
-            <Text>{t('wallet.missingCard')}</Text>
+            <Notice tone="warn">{t('wallet.missingCard')}</Notice>
           ) : null}
         </View>
       ) : null}
-
-      <Text testID="active-category">{categoryLabel(snapshot.categories, categoryId, locale)}</Text>
     </ScrollView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { padding: space.lg, paddingBottom: space.xl * 2 },
+  loading: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  error: { color: color.danger, fontSize: 13, marginTop: space.sm },
+  emptyCard: { marginTop: space.xl, alignItems: 'stretch' },
+  bestCard: { borderColor: color.primary, borderWidth: 2, backgroundColor: color.primarySoft },
+  resultHeader: { flexDirection: 'row', alignItems: 'flex-start' },
+  rank: { fontSize: 15, fontWeight: '700', color: color.inkMuted },
+  explanationLine: { marginTop: 4 },
+});
