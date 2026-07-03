@@ -1,19 +1,24 @@
 <!--
 Sync Impact Report
 ==================
-Version change: (template, unversioned) → 1.0.0 (initial ratification)
-Modified principles: n/a — all five principles newly defined from template placeholders
-Added sections:
-  - Core Principles (I–V)
-  - Technical Stack & Constraints
-  - Development Workflow & Git Practices
-  - Governance
-Removed sections: none (template placeholder slots filled)
+Version change: 1.0.0 → 1.0.1 (PATCH — wording consistency + completed propagation;
+addresses automated review findings on PR #11)
+Modified principles: none (no semantic changes)
+Added sections: none
+Removed sections: none
+Changes:
+  - Technical Stack & Constraints: i18n resource keys standardized to `en-CA` + `fr-CA`
+    (was `en` + `fr-CA`), matching the locales named in Principle I
 Templates:
   - ✅ .specify/templates/plan-template.md — Constitution Check gate is constitution-driven; no edit needed
   - ✅ .specify/templates/spec-template.md — prioritized, independently-testable stories align with Principles IV & V; no edit needed
-  - ✅ .specify/templates/tasks-template.md — updated: tests are NOT optional for financial logic (Principle V)
+  - ✅ .specify/templates/tasks-template.md — propagation completed in full: preamble,
+       the three per-story "Tests for User Story N" headings, and the Mobile Path
+       Conventions row (now apps/mobile/src/, apps/api/src/, packages/<name>/src/)
   - ✅ .specify/templates/checklist-template.md — generic; no edit needed
+Related (outside .specify/, edited outside this skill as it is not a Spec Kit artifact):
+  - .claude/skills/speckit-tasks/SKILL.md — Task Generation Rules now carry the matching
+    Principle V override (test tasks mandatory, and first, for financial logic)
 Follow-up TODOs: none
 -->
 
@@ -85,8 +90,8 @@ The approved stack for the mobile-first MVP:
 - **Monorepo**: pnpm workspaces — `apps/mobile`, `apps/api`, and `packages/*` for shared
   code, including the money primitives (integer minor units) and i18n primitives shared
   across app and API.
-- **i18n**: i18next (react-i18next + expo-localization). Both `en` and `fr-CA` resource
-  files MUST be complete for a feature to merge.
+- **i18n**: i18next (react-i18next + expo-localization). Both `en-CA` and `fr-CA`
+  resource files MUST be complete for a feature to merge.
 
 Changing this stack (language, framework, database, or monorepo layout) REQUIRES a
 constitution amendment. Per-feature technical detail (libraries, schemas, API shapes) is
@@ -125,4 +130,4 @@ agent instruction, or habit conflicts with it, the constitution wins until amend
 - **Runtime guidance**: `CLAUDE.md` provides day-to-day operating guidance for agents and
   MUST stay consistent with this constitution.
 
-**Version**: 1.0.0 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03
+**Version**: 1.0.1 | **Ratified**: 2026-07-03 | **Last Amended**: 2026-07-03

@@ -23,8 +23,9 @@ plan: constitution → `/speckit-specify` → `/speckit-clarify` → `/speckit-p
 `/speckit-tasks` → `/speckit-implement`.
 
 Always use the `speckit-*` slash commands (skills) to create or modify Spec Kit
-artifacts; do not hand-edit files under `.specify/` or `specs/` outside those commands
-(constitution changes go through `/speckit-constitution`).
+artifacts; do not hand-edit files under `.specify/` or `specs/` outside those commands.
+Constitution changes go through `/speckit-constitution` and then a PR — amendments
+require the `spec-lead-reviewer` pass (see Governance in the constitution).
 
 ## Technical stack (approved — changes require a constitution amendment)
 
@@ -42,8 +43,8 @@ artifacts; do not hand-edit files under `.specify/` or `specs/` outside those co
 - **Bilingual by design**: no hardcoded user-facing strings; i18n keys from the first
   commit; EN + FR-CA ship together.
 - **Privacy & security**: no secrets in the repo; no real financial/personal data in
-  tests or fixtures; changes touching auth, storage, APIs, or financial data flows get a
-  `security-reviewer` pass.
+  tests or fixtures; changes touching auth, storage, APIs, or financial data flows MUST
+  receive a `security-reviewer` pass before merge.
 - **Test-first for financial logic**: money math, credit calculations, and
   recommendation logic are TDD (failing test before implementation).
 
