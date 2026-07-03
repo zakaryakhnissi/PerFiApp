@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisites**: plan.md (required), spec.md (required for user stories), research.md, data-model.md, contracts/
 
-**Tests**: The examples below include test tasks. Tests are OPTIONAL - only include them if explicitly requested in the feature specification.
+**Tests**: The examples below include test tasks. Per Constitution Principle V (Test-First for Financial Logic), test tasks are MANDATORY — and must precede implementation tasks — for any work touching money math, credit calculations, or recommendation logic. For UI and glue code, test tasks are included when the feature specification requests them.
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
