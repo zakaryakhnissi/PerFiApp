@@ -9,6 +9,7 @@ import {
   type KnowledgebaseSnapshot,
 } from '@perfiapp/kb-schema';
 import { readValidated, write } from './storage';
+import bundledKb from './bundled-kb.json';
 
 const KB_KEY = 'perfiapp.kb-snapshot.v1';
 const DEFAULT_BASE_URL = process.env['EXPO_PUBLIC_API_URL'] ?? 'http://localhost:3000';
@@ -20,9 +21,19 @@ export function primeSnapshot(snapshot: KnowledgebaseSnapshot): void {
   inMemory = snapshot;
 }
 
+/**
+ * The seed knowledgebase shipped inside the app (research.md R4) — the
+ * first-run cache so the app works before it ever reaches the API. A fetched
+ * snapshot with a newer kbVersion supersedes it via refreshSnapshot().
+ */
+function bundledSnapshot(): KnowledgebaseSnapshot | null {
+  const parsed = KnowledgebaseSnapshotSchema.safeParse(bundledKb);
+  return parsed.success ? parsed.data : null;
+}
+
 export async function getSnapshot(): Promise<KnowledgebaseSnapshot | null> {
   if (inMemory) return inMemory;
-  inMemory = await readValidated(KB_KEY, KnowledgebaseSnapshotSchema);
+  inMemory = (await readValidated(KB_KEY, KnowledgebaseSnapshotSchema)) ?? bundledSnapshot();
   return inMemory;
 }
 
