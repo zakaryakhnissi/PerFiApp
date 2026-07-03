@@ -140,7 +140,7 @@ The tasks.md should be immediately executable - each task must be specific enoug
 
 **CRITICAL**: Tasks MUST be organized by user story to enable independent implementation and testing.
 
-**Tests are OPTIONAL**: Only generate test tasks if explicitly requested in the feature specification or if user requests TDD approach.
+**Tests are OPTIONAL, except for financial logic**: If the feature touches money math, credit calculations, or recommendation logic, test tasks are MANDATORY (Constitution Principle V — Test-First for Financial Logic) and MUST precede their corresponding implementation tasks. For all other code, only generate test tasks if explicitly requested in the feature specification or if the user requests a TDD approach.
 
 ### Checklist Format (REQUIRED)
 
