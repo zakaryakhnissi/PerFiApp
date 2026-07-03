@@ -1,0 +1,43 @@
+{
+  "id": "cibc-costco-mastercard",
+  "issuer": {
+    "enCA": "CIBC",
+    "frCA": "CIBC"
+  },
+  "network": "mastercard",
+  "name": {
+    "enCA": "CIBC Costco Mastercard",
+    "frCA": "Mastercard Costco CIBC"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "cashback"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {
+      "dining": 300,
+      "gas": 300,
+      "recurring_bills": 200
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

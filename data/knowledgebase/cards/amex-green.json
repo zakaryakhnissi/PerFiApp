@@ -1,0 +1,40 @@
+{
+  "id": "amex-green",
+  "issuer": {
+    "enCA": "American Express",
+    "frCA": "American Express"
+  },
+  "network": "amex",
+  "name": {
+    "enCA": "American Express Green Card",
+    "frCA": "Carte verte American Express"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "amex-mr"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {}
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

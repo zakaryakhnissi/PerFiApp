@@ -1,0 +1,13 @@
+{
+  "id": "aeroplan",
+  "name": {
+    "enCA": "Aeroplan",
+    "frCA": "Aéroplan"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 1500,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

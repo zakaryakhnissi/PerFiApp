@@ -1,0 +1,43 @@
+{
+  "id": "scotia-momentum-no-fee-visa",
+  "issuer": {
+    "enCA": "Scotiabank",
+    "frCA": "Banque Scotia"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "Scotia Momentum No-Fee Visa",
+    "frCA": "Visa Momentum sans frais Scotia"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "cashback"
+  },
+  "earnRates": {
+    "base": 50,
+    "byCategory": {
+      "groceries": 100,
+      "gas": 100,
+      "recurring_bills": 100
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

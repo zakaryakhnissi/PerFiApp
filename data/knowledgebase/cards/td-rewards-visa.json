@@ -1,0 +1,44 @@
+{
+  "id": "td-rewards-visa",
+  "issuer": {
+    "enCA": "TD",
+    "frCA": "TD"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "TD Rewards Visa",
+    "frCA": "Visa Récompenses TD"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "td-rewards"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {
+      "dining": 300,
+      "groceries": 200,
+      "recurring_bills": 200
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

@@ -1,0 +1,43 @@
+{
+  "id": "td-cash-back-visa",
+  "issuer": {
+    "enCA": "TD",
+    "frCA": "TD"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "TD Cash Back Visa",
+    "frCA": "Visa Remises TD"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "cashback"
+  },
+  "earnRates": {
+    "base": 50,
+    "byCategory": {
+      "groceries": 100,
+      "gas": 100,
+      "recurring_bills": 100
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

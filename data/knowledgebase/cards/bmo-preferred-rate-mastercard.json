@@ -1,0 +1,39 @@
+{
+  "id": "bmo-preferred-rate-mastercard",
+  "issuer": {
+    "enCA": "BMO",
+    "frCA": "BMO"
+  },
+  "network": "mastercard",
+  "name": {
+    "enCA": "BMO Preferred Rate Mastercard",
+    "frCA": "Mastercard BMO à taux préférentiel"
+  },
+  "annualFee": {
+    "amountCents": 2900,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "cashback"
+  },
+  "earnRates": {
+    "base": 0,
+    "byCategory": {}
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

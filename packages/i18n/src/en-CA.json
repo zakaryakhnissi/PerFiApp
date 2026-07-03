@@ -1,0 +1,55 @@
+{
+  "common": {
+    "appName": "PerFiApp",
+    "loading": "Loading…",
+    "retry": "Retry"
+  },
+  "recommend": {
+    "title": "Best card to use",
+    "categoryLabel": "What are you buying?",
+    "amountLabel": "Amount (optional)",
+    "amountPlaceholder": "e.g. 100.00",
+    "cta": "Recommend",
+    "bestPick": "Best pick",
+    "perHundredBasis": "Values shown per $100 of spend",
+    "baseRateNotice": "None of your cards has a bonus for this category — base rates shown.",
+    "invalidAmount": "Enter a valid amount greater than $0.00.",
+    "expectedValue": "Expected value: {{value}}",
+    "emptyWalletTitle": "Your wallet is empty",
+    "emptyWalletBody": "Add the cards you hold to get recommendations.",
+    "emptyWalletCta": "Add cards"
+  },
+  "explanation": {
+    "cashbackRate": "{{rate}}% cash back on {{category}} on a {{amount}} purchase",
+    "pointsRate": "{{rate}} pts/$ on {{category}}: about {{points}} points on {{amount}}",
+    "valuation": "Points valued at {{value}}¢ each ({{source}}, as of {{asOf}})",
+    "valuationDefault": "No published valuation for this program — a conservative default of {{value}}¢ per point is used",
+    "feeSunk": "Annual fee not counted against this purchase — you already pay it whether or not you use the card",
+    "capNotModelled": "Heads-up: {{disclosure}} (spending caps are not yet factored into the math)",
+    "baseRateFallback": "Base rate applied — this card has no bonus for {{category}}"
+  },
+  "kb": {
+    "title": "Card knowledgebase",
+    "searchPlaceholder": "Search cards or issuers",
+    "filterNoFee": "No annual fee",
+    "filterBonusCategory": "Bonus category",
+    "annualFee": "Annual fee",
+    "noFee": "No annual fee",
+    "earnRates": "Earn rates",
+    "baseRate": "Everything else",
+    "welcomeBonus": "Welcome bonus",
+    "statementCredits": "Statement credits",
+    "perks": "Perks",
+    "insurance": "Insurance",
+    "dataAsOf": "Card terms as of {{date}}",
+    "empty": "No cards match your filters"
+  },
+  "wallet": {
+    "title": "My wallet",
+    "add": "Add to wallet",
+    "remove": "Remove",
+    "empty": "No cards yet — add the cards you hold from the knowledgebase.",
+    "missingCard": "This card is no longer listed in the knowledgebase",
+    "inWallet": "In your wallet"
+  }
+}

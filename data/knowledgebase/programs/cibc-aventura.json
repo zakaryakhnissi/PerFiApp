@@ -1,0 +1,13 @@
+{
+  "id": "cibc-aventura",
+  "name": {
+    "enCA": "CIBC Aventura Points",
+    "frCA": "Points Aventura CIBC"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 1000,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

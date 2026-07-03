@@ -1,0 +1,13 @@
+{
+  "id": "scene-plus",
+  "name": {
+    "enCA": "Scene+",
+    "frCA": "Scène+"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 1000,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

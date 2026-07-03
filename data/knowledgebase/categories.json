@@ -1,0 +1,72 @@
+[
+  {
+    "id": "groceries",
+    "label": {
+      "enCA": "Groceries",
+      "frCA": "Épicerie"
+    }
+  },
+  {
+    "id": "gas",
+    "label": {
+      "enCA": "Gas",
+      "frCA": "Essence"
+    }
+  },
+  {
+    "id": "dining",
+    "label": {
+      "enCA": "Dining & restaurants",
+      "frCA": "Restaurants"
+    }
+  },
+  {
+    "id": "recurring_bills",
+    "label": {
+      "enCA": "Recurring bills",
+      "frCA": "Factures récurrentes"
+    }
+  },
+  {
+    "id": "pharmacy",
+    "label": {
+      "enCA": "Pharmacy",
+      "frCA": "Pharmacie"
+    }
+  },
+  {
+    "id": "travel",
+    "label": {
+      "enCA": "Travel",
+      "frCA": "Voyages"
+    }
+  },
+  {
+    "id": "transit",
+    "label": {
+      "enCA": "Transit",
+      "frCA": "Transport en commun"
+    }
+  },
+  {
+    "id": "entertainment",
+    "label": {
+      "enCA": "Entertainment",
+      "frCA": "Divertissement"
+    }
+  },
+  {
+    "id": "online_shopping",
+    "label": {
+      "enCA": "Online shopping",
+      "frCA": "Achats en ligne"
+    }
+  },
+  {
+    "id": "other",
+    "label": {
+      "enCA": "Everything else",
+      "frCA": "Tout le reste"
+    }
+  }
+]
