@@ -14,6 +14,23 @@ export default tseslint.config(
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {
+    // Plain-JS tool configs and scripts (jest.config.js, check-keys.js, …) run in Node/CommonJS.
+    files: ["**/*.js", "**/*.cjs"],
+    languageOptions: {
+      globals: {
+        module: "readonly",
+        require: "readonly",
+        process: "readonly",
+        console: "readonly",
+        __dirname: "readonly",
+        jest: "readonly",
+      },
+    },
+    rules: {
+      "@typescript-eslint/no-require-imports": "off",
+    },
+  },
+  {
     // Principle II guard (research.md R2): money math is integer-only. Outside
     // packages/money, code must not parse floats or write fractional literals —
     // all cent/rate arithmetic goes through @perfiapp/money.
@@ -30,7 +47,7 @@ export default tseslint.config(
       "no-restricted-syntax": [
         "error",
         {
-          selector: "Literal[value=/^\\d+\\.\\d+$/]",
+          selector: "Literal[raw=/^\\d+\\.\\d+$/]",
           message: "Fractional numeric literals are banned near money code; represent values in integer minor units.",
         },
       ],
