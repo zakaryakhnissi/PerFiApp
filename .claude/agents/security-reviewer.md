@@ -55,4 +55,17 @@ For each finding:
 - **Impact**: what an attacker or data breach could achieve
 - **Fix**: concrete, specific remediation
 
-If nothing security-sensitive changed, say so plainly and briefly.
+If nothing security-sensitive changed, say so plainly and briefly — one or two sentences,
+no section-by-section walkthrough of things that were fine.
+
+## Calibration
+
+- Report only concrete, material risks in the changed code: something an attacker could
+  actually do, or data that would actually leak. Skip theoretical hardening ideas and
+  best-practice suggestions for code that isn't in the diff.
+- **Cap the report at 3 findings**, highest impact first.
+- Severity honestly: **Critical/High** only for exploitable issues or exposed
+  secrets/PII. Process and wording concerns are **Low** at most.
+- Docs-only diffs almost never carry security findings — if that's the case, say
+  "Nothing security-relevant in this diff" and stop. Do not restate another reviewer's
+  findings with a security framing.

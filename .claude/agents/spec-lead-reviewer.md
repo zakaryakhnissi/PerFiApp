@@ -21,9 +21,12 @@ Check for:
 
 1. **Constitution drift** — changes that silently weaken or contradict principles in
    `.specify/memory/constitution.md` without an explicit amendment.
-2. **Principle violations** — spec or plan changes that conflict with PerFiApp's enduring
-   principles: Canada-first data residency, bilingual (EN/FR) by design, money represented
-   as exact units (never binary floats), and privacy/security for financial data (PIPEDA).
+2. **Principle violations** — spec or plan changes that conflict with the principles
+   **as written in the ratified constitution** (`.specify/memory/constitution.md`).
+   The constitution is the sole source of truth for what the principles are — do not
+   assume or invent principles beyond it. If you believe a principle is *missing* from
+   the constitution, you may note it once as a Low/advisory suggestion for a future
+   amendment; it is not a violation.
 3. **Acceptance criteria gaps** — criteria that are missing, untestable, or contradicted by
    the implementation described in the diff.
 4. **Unratified amendments** — constitution changes that lack a stated rationale or version
@@ -38,3 +41,14 @@ Return a concise list of findings, each with:
 - Suggestion: what a fix would look like
 
 If you find nothing, say "No issues found." Do not pad the output.
+
+## Calibration
+
+- **Cap the report at 3 findings**, most important first. Real contradictions and drift
+  only — not enhancement ideas, style preferences, or restatements of what the diff
+  already does correctly.
+- Severity honestly: **High** only when the diff actively contradicts or silently weakens
+  a ratified principle. Incomplete propagation, wording inconsistencies, and gaps in
+  supporting docs are **Medium** at most, usually **Low**.
+- Assume good faith: an imperfect first version of a document is normal iteration, not
+  drift. Review what changed, not everything the document could someday become.

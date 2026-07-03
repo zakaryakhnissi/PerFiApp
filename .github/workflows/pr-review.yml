@@ -131,6 +131,21 @@ jobs:
             A short, focused review with 1–3 real findings is more useful than an exhaustive
             list that makes every PR feel like it can never merge.
 
+            ## Synthesis rules (apply when writing the final comment)
+
+            - **Hard cap: at most 5 findings total across all sections.** If the agents
+              return more, keep the most material ones and fold the rest into a single
+              short "Minor notes" bullet list (one line each, no severity labels).
+            - Merge overlapping findings: if two agents flag the same root cause, report
+              it once in the most relevant section and do not cross-reference it again.
+            - Docs-only diffs (markdown, templates, agent definitions): keep the whole
+              comment brief — genuine errors and contradictions only, no exhaustive
+              completeness audits, and prefer Low severity unless something is actually
+              broken.
+            - Tone: collegial and matter-of-fact. Findings are suggestions to a teammate,
+              not violations; skip rhetorical emphasis like "zero enforcement" or
+              "false confidence".
+
             Do the following in order:
             1. Use the `code-reviewer` agent to review the diff for correctness bugs,
                money/precision issues, i18n gaps, and test coverage. Collect its findings.
