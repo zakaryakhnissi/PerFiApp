@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "PerFiApp",
+    "slug": "perfiapp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": false },
+    "android": {},
+    "locales": {
+      "en": "./locales/en-CA.json",
+      "fr": "./locales/fr-CA.json"
+    }
+  }
+}
