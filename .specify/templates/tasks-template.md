@@ -13,19 +13,6 @@ description: "Task list template for feature implementation"
 
 **Organization**: Tasks are grouped by user story to enable independent implementation and testing of each story.
 
-## Constitution-Mandated Task Categories (FinOS)
-
-Every generated `tasks.md` MUST include tasks in these categories wherever the feature is in scope (see `.specify/memory/constitution.md` v2.2.0). Do not silently omit them:
-
-- **Contract tests (Principle VII)** — for each cross-module contract the feature consumes or provides, a **consumer** test AND a **provider** test that run in CI. Written before implementation.
-- **Money-correctness tests (Principle IV)** — known-value fixtures for every monetary calculation (incl. Canadian tax/fee/interest/FX/points edge cases); explicit rounding asserted; no binary-float types.
-- **Idempotency tests (Principle IV)** — every state write (ledgers, reminders, goal progress) proven safe to retry (duplicate/replayed event does not double-apply).
-- **Audit-trail tasks (Principle VI)** — append-only, immutable record of every confirmed action and state change; recommendations persist their inputs + reasoning.
-- **Redaction tasks (Principle V / Quality Standards)** — structured logs redact PII and monetary values; audit trail kept separate from debug logs.
-- **Freshness tasks (Principle VIII)** — external-feed values carry a freshness timestamp; stale-data paths flag/withhold; ingestion has timeouts/retries/rate-limit handling.
-- **Threat-model mitigation tasks (Principle V)** — one task per mitigation named in the spec's threat model (server-side authZ, token isolation/rotation, MFA on high-risk actions, revocation cascade, etc.).
-- **Locale/bilingual tasks (Principle II)** — EN/FR content + locale-correct number/date formatting (fr-CA `1 234,56 $`); bilingual screen-reader labels (WCAG 2.1 AA).
-
 ## Format: `[ID] [P?] [Story] Description`
 
 - **[P]**: Can run in parallel (different files, no dependencies)
@@ -77,13 +64,11 @@ Every generated `tasks.md` MUST include tasks in these categories wherever the f
 Examples of foundational tasks (adjust based on your project):
 
 - [ ] T004 Setup database schema and migrations framework
-- [ ] T005 [P] Implement authentication/authorization framework (server-side cross-user authZ — Principle V)
+- [ ] T005 [P] Implement authentication/authorization framework
 - [ ] T006 [P] Setup API routing and middleware structure
-- [ ] T007 Create base models/entities that all stories depend on (money fields as integer minor units / decimal — Principle IV)
-- [ ] T008 Configure structured logging with PII + monetary-value redaction (Principle V / Quality Standards)
-- [ ] T008a [P] Implement append-only immutable audit trail, kept separate from debug logs (Principle VI)
-- [ ] T008b [P] Implement freshness-timestamp + stale-data flag/withhold helper for external feeds (Principle VIII)
-- [ ] T009 Setup environment configuration management (secrets store — tokens never plaintext/logged, rotatable — Principle V)
+- [ ] T007 Create base models/entities that all stories depend on
+- [ ] T008 Configure error handling and logging infrastructure
+- [ ] T009 Setup environment configuration management
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
@@ -99,11 +84,8 @@ Examples of foundational tasks (adjust based on your project):
 
 > **NOTE: Write these tests FIRST, ensure they FAIL before implementation**
 
-- [ ] T010 [P] [US1] **Consumer** contract test for [contract] in tests/contract/test_[name]_consumer.py (Principle VII)
-- [ ] T010a [P] [US1] **Provider** contract test for [contract] in tests/contract/test_[name]_provider.py (Principle VII)
+- [ ] T010 [P] [US1] Contract test for [endpoint] in tests/contract/test_[name].py
 - [ ] T011 [P] [US1] Integration test for [user journey] in tests/integration/test_[name].py
-- [ ] T011a [P] [US1] Money-correctness unit test with known fixtures (rounding + Canadian edge cases, no float) in tests/unit/test_[calc].py (Principle IV)
-- [ ] T011b [P] [US1] Idempotency test — replayed/duplicate event does not double-apply [state write] in tests/unit/test_[name]_idempotency.py (Principle IV)
 
 ### Implementation for User Story 1
 
@@ -171,11 +153,9 @@ Examples of foundational tasks (adjust based on your project):
 
 - [ ] TXXX [P] Documentation updates in docs/
 - [ ] TXXX Code cleanup and refactoring
-- [ ] TXXX Performance optimization (≤300 ms cold-start / module-switch — Quality Standards)
-- [ ] TXXX [P] Additional unit tests in tests/unit/
-- [ ] TXXX Security hardening — one task per spec threat-model mitigation (server-side authZ, token isolation/rotation, MFA, revocation cascade — Principle V)
-- [ ] TXXX [P] Verify log redaction (no PII / monetary values leak) and audit-trail completeness (Principles V, VI)
-- [ ] TXXX [P] Bilingual + locale-format verification (EN/FR, fr-CA `1 234,56 $`, WCAG 2.1 AA SR labels — Principle II)
+- [ ] TXXX Performance optimization across all stories
+- [ ] TXXX [P] Additional unit tests (if requested) in tests/unit/
+- [ ] TXXX Security hardening
 - [ ] TXXX Run quickstart.md validation
 
 ---
