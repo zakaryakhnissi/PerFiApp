@@ -33,8 +33,8 @@ require the `spec-lead-reviewer` pass (see Governance in the constitution).
 - **Backend**: Node.js + TypeScript, NestJS, PostgreSQL.
 - **Monorepo**: pnpm workspaces — `apps/mobile`, `apps/api`, `packages/*` (shared money
   and i18n primitives live in packages, used by both app and API).
-- **i18n**: i18next (react-i18next + expo-localization); `en` and `fr-CA` resources are
-  both mandatory for merge.
+- **i18n**: i18next (react-i18next + expo-localization); `en-CA` and `fr-CA` resources
+  are both mandatory for merge.
 
 ## Non-negotiable conventions
 
