@@ -8,6 +8,15 @@
 
 **Input**: User description: "Card Knowledgebase & Best Card Recommender (Rewards & Loyalty module, Phase 1 MVP core) — a Canada-first, bilingual (EN/FR-CA) knowledgebase of Canadian credit cards and a recommender that tells the user which of THEIR cards to use for a given purchase to maximize net value."
 
+## Clarifications
+
+### Session 2026-07-03
+
+- Q: How should the annual fee be treated when ranking cards the user already holds? → A: Sunk cost — the fee never reduces per-purchase expected value; it is displayed with each card and reserved for future keep/cancel analysis.
+- Q: Which spend-category list should v1 use? → A: A fixed controlled list of 10 categories: groceries, gas, dining, recurring bills, pharmacy, travel, transit, entertainment, online shopping, other.
+- Q: Where does the user's wallet live in v1? → A: On-device only — no user accounts, authentication, or server-side wallet storage in this feature.
+- Q: How are point valuations curated and refreshed? → A: Team-curated per program with source and as-of date, reviewed quarterly and on major program changes; programs without a published valuation default to a conservative 0.5¢/point, disclosed in the explanation.
+
 ## User Scenarios & Testing *(mandatory)*
 
 ### User Story 1 - Get the best card for a purchase (Priority: P1)
@@ -133,16 +142,20 @@ remaining cards.
   English and Canadian French; a card cannot be published with either language missing.
 - **FR-004**: Users MUST be able to browse, search by card name/issuer, and filter the
   knowledgebase by annual fee (including "no fee") and by bonus earn category.
-- **FR-005**: Each points-based reward program in the knowledgebase MUST carry a
-  published CAD valuation (cents per point, with its source and as-of date) used for
-  CAD-equivalent math.
+- **FR-005**: Each points-based reward program in the knowledgebase MUST carry a CAD
+  valuation (cents per point, with its source and as-of date) used for CAD-equivalent
+  math. Valuations are team-curated and reviewed quarterly and on major program
+  changes; a program without a published valuation uses a conservative default of
+  0.5¢/point, and every recommendation using the default discloses it.
 
 **Wallet**
 
 - **FR-006**: Users MUST be able to add any knowledgebase card to their wallet and
   remove it; the wallet is a list of references to knowledgebase cards.
 - **FR-007**: The system MUST NOT request or store card numbers, balances, credentials,
-  or any bank-account linkage in this feature — wallet membership only.
+  or any bank-account linkage in this feature — wallet membership only. The wallet is
+  stored on the user's device; this feature introduces no user accounts,
+  authentication, or server-side storage of any user data.
 
 **Recommender**
 
@@ -151,8 +164,9 @@ remaining cards.
   exact CAD cents.
 - **FR-009**: Expected value MUST account for: the card's earn rate for the category
   (bonus rate if applicable, else base rate) and conversion of points to CAD via the
-  program valuation (FR-005). The annual-fee treatment MUST be identical across cards
-  and disclosed in the explanation (default: sunk cost — see Assumptions).
+  program valuation (FR-005). The annual fee is treated as sunk cost: it MUST NOT
+  reduce per-purchase expected value for cards the user holds, and this treatment MUST
+  be disclosed in the explanation (see Clarifications).
 - **FR-010**: Every recommendation MUST include a plain-language, localized explanation
   showing the math: rate applied, point valuation used, fee treatment, and any
   assumptions (e.g., default point valuation, bonus caps not modelled).
@@ -178,10 +192,11 @@ remaining cards.
   as-of date.
 - **Reward Program**: a points/cash-back scheme — bilingual name, CAD valuation in
   cents-per-point (with source + as-of date).
-- **Spend Category**: the controlled, bilingual list of merchant categories used for
-  earn rates and recommendation requests (e.g., groceries, gas, dining, recurring
-  bills, other).
-- **Wallet**: a user's set of references to Cards; no financial account data.
+- **Spend Category**: the fixed, controlled, bilingual list of 10 merchant categories
+  used for earn rates and recommendation requests: groceries, gas, dining, recurring
+  bills, pharmacy, travel, transit, entertainment, online shopping, other.
+- **Wallet**: a user's set of references to Cards, stored on-device; no financial
+  account data and no server-side copy.
 - **Recommendation**: the ranked result for (wallet, category, optional amount) — per
   card: expected value in cents, the applied rate, valuation, fee treatment, and the
   localized explanation.
@@ -206,25 +221,24 @@ remaining cards.
 
 ## Assumptions
 
-- **Single user, single profile**: household/multi-profile coordination is a later
-  feature (per PDR phases); each wallet belongs to one user.
+- **Single user, single profile, on-device**: household/multi-profile coordination and
+  user accounts are later features (per PDR phases and Clarifications); each wallet
+  belongs to one user on one device.
 - **Curated data, manual pipeline**: card data is maintained by the team as curated
   reference data with an as-of date; automated scraping/feeds of issuer terms are out
   of scope for v1.
-- **Category granularity**: v1 uses a small controlled category list (on the order of
-  8–12 categories) rather than merchant-level detection; merchant-level mapping arrives
-  with transaction data in a later phase.
+- **Category granularity**: v1 uses the fixed 10-category list (see Clarifications)
+  rather than merchant-level detection; merchant-level mapping arrives with
+  transaction data in a later phase.
 - **Bonus caps and rotating categories**: displayed as disclosures but not modelled in
   v1 ranking math (requires spend history the app doesn't have yet). The explanation
   must disclose this whenever a capped rate is applied.
-- **Annual-fee amortization**: the default ranking treats the annual fee as already
-  sunk for cards the user holds (the fee matters for "is this card worth keeping",
-  not for per-purchase choice); the fee is still displayed with each card. A
-  fee-inclusive comparison view can be added later without changing the ranking
-  contract.
-- **Point valuations**: team-curated per program with source and as-of date; where no
-  published valuation exists, a documented conservative default is used and disclosed
-  in the explanation (per Edge Cases).
+- **Annual fee — sunk cost** (confirmed in Clarifications): the fee never affects
+  per-purchase ranking for held cards; it is displayed with each card. A fee-inclusive
+  keep/cancel comparison view can be added later without changing the ranking contract.
+- **Point valuations** (confirmed in Clarifications): team-curated per program with
+  source and as-of date, quarterly review cadence; unlisted programs use the disclosed
+  0.5¢/point conservative default.
 - **Out of scope for this feature** (from the feature description): bank/transaction
   aggregation, offer auto-activation, welcome-bonus progress tracking,
   utilization/budget awareness, notifications, household/multi-profile support.
