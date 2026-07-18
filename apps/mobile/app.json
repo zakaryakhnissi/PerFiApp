@@ -7,6 +7,14 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": { "supportsTablet": false },
-    "android": { "package": "com.perfiapp.app" }
+    "android": { "package": "com.perfiapp.app" },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": { "kotlinVersion": "1.9.25" }
+        }
+      ]
+    ]
   }
 }
