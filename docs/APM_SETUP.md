@@ -8,6 +8,12 @@ declare every agent primitive the project relies on (instructions, skills, promp
 hooks, plugins, and MCP servers) **once** in a manifest, so every collaborator — and CI —
 gets a byte-identical agent setup with a single command.
 
+> **Status: not yet set up.** This guide is the agreed plan, but the repo does not have an
+> `apm.yml` / `apm.lock.yaml` yet — everything we currently share (agents, Spec Kit skills)
+> is committed directly and needs no install step. The manifest gets created the first time
+> we adopt a shared external dependency (a skill, prompt pack, or MCP server). Until then,
+> cloning the repo is the whole setup.
+
 > **APM vs. Spec Kit — they are complementary, not competing.**
 > [Spec Kit](https://github.com/github/spec-kit) (already set up in this repo under
 > `.specify/` and `.claude/skills/speckit-*`) gives us the **spec-driven _workflow_**
@@ -181,6 +187,27 @@ For a new collaborator:
 
 In CI, prefer `apm install --frozen` so a build fails fast if `apm.yml` and
 `apm.lock.yaml` are out of sync.
+
+---
+
+## 7. MCP server vetting checklist
+
+MCP servers must be **explicitly declared and vetted before adoption** — no silent or
+transitive MCP. Before adding one to the manifest, verify:
+
+1. **Provenance** — official vendor/org repository, active maintenance, pinned to a
+   release ref + content hash (never a moving branch).
+2. **Authentication** — the server enforces auth on every tool call; no
+   unauthenticated network-exposed endpoints (cf. CVE-2026-32211, Azure MCP, CVSS 9.1).
+3. **Remote code execution surface** — review how the server handles untrusted input;
+   MCP servers have shipped critical RCE vulnerabilities (see the OX Security advisory
+   covering 10 critical CVEs in popular servers). Reject servers that eval/exec
+   tool arguments or shell out with interpolated input.
+4. **Scope & least privilege** — the credentials given to the server are scoped to
+   exactly what our agents need, nothing account-wide.
+5. **Data flow** — no financial or personal data leaves our environment through the
+   server without an explicit, documented reason (PIPEDA).
+6. **`apm audit`** — run it after adding; resolve or document every finding.
 
 ---
 

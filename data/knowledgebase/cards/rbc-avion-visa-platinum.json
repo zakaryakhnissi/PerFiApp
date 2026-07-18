@@ -1,0 +1,67 @@
+{
+  "id": "rbc-avion-visa-platinum",
+  "issuer": {
+    "enCA": "RBC",
+    "frCA": "RBC"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "RBC Avion Visa Platinum",
+    "frCA": "Visa Platine Avion RBC"
+  },
+  "annualFee": {
+    "amountCents": 11000,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "rbc-avion"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {}
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [
+    {
+      "description": {
+        "enCA": "Annual travel credit",
+        "frCA": "Crédit voyage annuel"
+      },
+      "amount": {
+        "amountCents": 10000,
+        "currency": "CAD"
+      },
+      "cadence": {
+        "enCA": "Once per calendar year",
+        "frCA": "Une fois par année civile"
+      }
+    }
+  ],
+  "perks": [
+    {
+      "enCA": "Airport lounge access program",
+      "frCA": "Programme d’accès aux salons d’aéroport"
+    },
+    {
+      "enCA": "Concierge service",
+      "frCA": "Service de conciergerie"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Out-of-province emergency medical insurance",
+      "frCA": "Assurance médicale d’urgence hors province"
+    },
+    {
+      "enCA": "Rental car collision/loss damage insurance",
+      "frCA": "Assurance collision/dommages pour voiture de location"
+    },
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

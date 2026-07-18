@@ -1,0 +1,43 @@
+{
+  "id": "scotia-scene-plus-visa",
+  "issuer": {
+    "enCA": "Scotiabank",
+    "frCA": "Banque Scotia"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "Scene+ Visa",
+    "frCA": "Visa Scène+"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "scene-plus"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {
+      "entertainment": 200,
+      "dining": 200
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

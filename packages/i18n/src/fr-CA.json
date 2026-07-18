@@ -1,0 +1,55 @@
+{
+  "common": {
+    "appName": "PerFiApp",
+    "loading": "Chargement…",
+    "retry": "Réessayer"
+  },
+  "recommend": {
+    "title": "Meilleure carte à utiliser",
+    "categoryLabel": "Qu'achetez-vous?",
+    "amountLabel": "Montant (facultatif)",
+    "amountPlaceholder": "p. ex. 100,00",
+    "cta": "Recommander",
+    "bestPick": "Meilleur choix",
+    "perHundredBasis": "Valeurs présentées par tranche de 100 $ de dépenses",
+    "baseRateNotice": "Aucune de vos cartes n'offre de bonification pour cette catégorie — taux de base affichés.",
+    "invalidAmount": "Entrez un montant valide supérieur à 0,00 $.",
+    "expectedValue": "Valeur attendue : {{value}}",
+    "emptyWalletTitle": "Votre portefeuille est vide",
+    "emptyWalletBody": "Ajoutez vos cartes pour obtenir des recommandations.",
+    "emptyWalletCta": "Ajouter des cartes"
+  },
+  "explanation": {
+    "cashbackRate": "{{rate}} % de remise en argent sur {{category}} pour un achat de {{amount}}",
+    "pointsRate": "{{rate}} pts/$ sur {{category}} : environ {{points}} points pour {{amount}}",
+    "valuation": "Points évalués à {{value}} ¢ chacun ({{source}}, en date du {{asOf}})",
+    "valuationDefault": "Aucune évaluation publiée pour ce programme — une valeur par défaut prudente de {{value}} ¢ par point est utilisée",
+    "feeSunk": "Les frais annuels ne sont pas imputés à cet achat — vous les payez déjà, que vous utilisiez la carte ou non",
+    "capNotModelled": "À noter : {{disclosure}} (les plafonds de dépenses ne sont pas encore pris en compte dans le calcul)",
+    "baseRateFallback": "Taux de base appliqué — cette carte n'offre pas de bonification pour {{category}}"
+  },
+  "kb": {
+    "title": "Base de connaissances des cartes",
+    "searchPlaceholder": "Rechercher des cartes ou des émetteurs",
+    "filterNoFee": "Sans frais annuels",
+    "filterBonusCategory": "Catégorie bonifiée",
+    "annualFee": "Frais annuels",
+    "noFee": "Sans frais annuels",
+    "earnRates": "Taux d'accumulation",
+    "baseRate": "Tout le reste",
+    "welcomeBonus": "Prime de bienvenue",
+    "statementCredits": "Crédits sur relevé",
+    "perks": "Avantages",
+    "insurance": "Assurances",
+    "dataAsOf": "Conditions de la carte en date du {{date}}",
+    "empty": "Aucune carte ne correspond à vos filtres"
+  },
+  "wallet": {
+    "title": "Mon portefeuille",
+    "add": "Ajouter au portefeuille",
+    "remove": "Retirer",
+    "empty": "Aucune carte pour l'instant — ajoutez vos cartes à partir de la base de connaissances.",
+    "missingCard": "Cette carte ne figure plus dans la base de connaissances",
+    "inWallet": "Dans votre portefeuille"
+  }
+}

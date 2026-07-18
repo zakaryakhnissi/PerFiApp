@@ -1,0 +1,20 @@
+{
+  "expo": {
+    "name": "PerFiApp",
+    "slug": "perfiapp",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "newArchEnabled": true,
+    "ios": { "supportsTablet": false },
+    "android": { "package": "com.perfiapp.app" },
+    "plugins": [
+      [
+        "expo-build-properties",
+        {
+          "android": { "kotlinVersion": "1.9.25" }
+        }
+      ]
+    ]
+  }
+}

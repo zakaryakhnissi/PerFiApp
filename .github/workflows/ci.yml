@@ -1,0 +1,52 @@
+name: CI
+
+# T029 — required checks for the card-knowledgebase feature: financial-logic
+# suites (Principle V), API contract e2e, i18n key parity (Principle I gate),
+# knowledgebase data validation, mobile acceptance tests, and lint.
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install (frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: i18n key parity (en-CA / fr-CA)
+        run: pnpm check-i18n
+
+      - name: Validate knowledgebase data
+        run: pnpm validate-kb
+
+      - name: Money & recommender suites (test-first financial logic)
+        run: pnpm --filter @perfiapp/money --filter @perfiapp/recommender test
+
+      - name: API contract e2e
+        run: pnpm --filter @perfiapp/api test:e2e
+
+      - name: Mobile acceptance tests
+        run: pnpm --filter @perfiapp/mobile test
+
+      - name: Package builds
+        run: pnpm --filter "./packages/*" build && pnpm --filter @perfiapp/api build

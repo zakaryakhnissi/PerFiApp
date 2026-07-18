@@ -1,0 +1,43 @@
+{
+  "id": "rbc-rewards-plus-visa",
+  "issuer": {
+    "enCA": "RBC",
+    "frCA": "RBC"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "RBC Rewards+ Visa",
+    "frCA": "Visa Récompenses+ RBC"
+  },
+  "annualFee": {
+    "amountCents": 3900,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "rbc-avion"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {
+      "gas": 125,
+      "groceries": 125
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

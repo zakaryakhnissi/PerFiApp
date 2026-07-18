@@ -1,0 +1,13 @@
+{
+  "id": "rbc-avion",
+  "name": {
+    "enCA": "RBC Avion Rewards",
+    "frCA": "Récompenses RBC Avion"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 1500,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

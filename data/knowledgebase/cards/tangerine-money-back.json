@@ -1,0 +1,47 @@
+{
+  "id": "tangerine-money-back",
+  "issuer": {
+    "enCA": "Tangerine",
+    "frCA": "Tangerine"
+  },
+  "network": "mastercard",
+  "name": {
+    "enCA": "Tangerine Money-Back Credit Card",
+    "frCA": "Carte de crédit Remises Tangerine"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "cashback"
+  },
+  "earnRates": {
+    "base": 50,
+    "byCategory": {
+      "groceries": 200,
+      "recurring_bills": 200
+    }
+  },
+  "capDisclosures": {
+    "groceries": {
+      "enCA": "Bonus grocery rate applies to a capped amount of annual spend",
+      "frCA": "Le taux bonifié sur l’épicerie s’applique à un plafond de dépenses annuelles"
+    }
+  },
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

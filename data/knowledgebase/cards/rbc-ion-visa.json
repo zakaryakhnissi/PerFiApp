@@ -1,0 +1,46 @@
+{
+  "id": "rbc-ion-visa",
+  "issuer": {
+    "enCA": "RBC",
+    "frCA": "RBC"
+  },
+  "network": "visa",
+  "name": {
+    "enCA": "RBC ION Visa",
+    "frCA": "Visa ION RBC"
+  },
+  "annualFee": {
+    "amountCents": 0,
+    "currency": "CAD"
+  },
+  "rewardCurrency": {
+    "kind": "points",
+    "programId": "rbc-avion"
+  },
+  "earnRates": {
+    "base": 100,
+    "byCategory": {
+      "groceries": 150,
+      "gas": 150,
+      "dining": 150,
+      "transit": 150,
+      "recurring_bills": 150
+    }
+  },
+  "capDisclosures": {},
+  "welcomeBonus": null,
+  "statementCredits": [],
+  "perks": [
+    {
+      "enCA": "Purchase security and extended warranty",
+      "frCA": "Garantie prolongée et assurance achats"
+    }
+  ],
+  "insurance": [
+    {
+      "enCA": "Mobile device insurance",
+      "frCA": "Assurance appareils mobiles"
+    }
+  ],
+  "dataAsOf": "2026-07-03"
+}

@@ -1,0 +1,13 @@
+{
+  "id": "amex-mr",
+  "name": {
+    "enCA": "American Express Membership Rewards",
+    "frCA": "Récompenses privilèges American Express"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 1800,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

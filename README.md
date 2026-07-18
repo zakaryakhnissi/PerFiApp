@@ -62,5 +62,12 @@ PerFiApp is organized into module tabs, each with focused submodules:
 
 ## Status
 
-Early stage — defining product scope. See [docs/PDR_PerFiApp.md](docs/PDR_PerFiApp.md) for
-the current module map.
+Early stage. The [constitution](.specify/memory/constitution.md) is ratified (principles,
+tech stack, workflow), and scope is phased: the MVP core is **Rewards & Loyalty, Credit &
+Coaching, and Bills & Subscriptions** — see the delivery phases table in
+[docs/PDR_PerFiApp.md](docs/PDR_PerFiApp.md). The first feature entering the Spec Kit
+pipeline is the Card Knowledgebase & Best Card Recommender.
+
+## License
+
+Copyright © 2026 PerFiApp. All rights reserved — see [LICENSE](LICENSE).

@@ -1,0 +1,13 @@
+{
+  "id": "marriott-bonvoy",
+  "name": {
+    "enCA": "Marriott Bonvoy",
+    "frCA": "Marriott Bonvoy"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 500,
+    "source": "PerFiApp conservative default",
+    "asOf": "2026-07-03",
+    "isDefault": true
+  }
+}

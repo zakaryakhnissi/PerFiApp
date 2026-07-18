@@ -1,0 +1,13 @@
+{
+  "id": "bmo-rewards",
+  "name": {
+    "enCA": "BMO Rewards",
+    "frCA": "Récompenses BMO"
+  },
+  "valuation": {
+    "milliCentsPerPoint": 700,
+    "source": "PerFiApp curated estimate from public program terms",
+    "asOf": "2026-07-03",
+    "isDefault": false
+  }
+}

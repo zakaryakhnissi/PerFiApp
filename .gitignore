@@ -1,2 +1,25 @@
 # Claude Code local, per-user settings (may contain local permission grants / tokens)
 .claude/settings.local.json
+
+# Node / TypeScript
+node_modules/
+dist/
+build/
+coverage/
+*.log
+*.tsbuildinfo
+
+# Environment — never commit secrets (Constitution Principle III)
+.env
+.env.*
+
+# Expo / React Native
+.expo/
+.expo-shared/
+apps/mobile/ios/
+apps/mobile/android/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
