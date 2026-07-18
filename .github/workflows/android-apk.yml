@@ -46,6 +46,9 @@ jobs:
       - name: Regenerate bundled knowledgebase
         run: node apps/mobile/scripts/bundle-kb.js
 
+      - name: Build workspace packages (Metro resolves their dist entrypoints)
+        run: pnpm --filter "./packages/*" build
+
       - name: Expo prebuild (android)
         working-directory: apps/mobile
         run: npx expo prebuild --platform android --no-install
