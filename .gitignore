@@ -1,2 +1,3 @@
 # Claude Code local, per-user settings (may contain local permission grants / tokens)
 .claude/settings.local.json
+.claude/agent-log.txt
